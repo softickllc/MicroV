@@ -141,6 +141,10 @@
     - [5.5.5. mv_vp_management_op_pause_vp, OP=0x4, IDX=0x4](#555-mv_vp_management_op_pause_vp-op0x4-idx0x4)
     - [5.5.6. mv_vp_management_op_resume_vp, OP=0x4, IDX=0x5](#556-mv_vp_management_op_resume_vp-op0x4-idx0x5)
   - [5.6. Virtual Processor Exits](#56-virtual-processor-exits)
+    - [5.6.1. mv_vp_exit_op_vmread, OP=0x9, IDX=0x0](#561-mv_vp_exit_op_vmread-op0x9-idx0x0)
+    - [5.6.2. mv_vp_exit_op_vmwrite, OP=0x9, IDX=0x1](#562-mv_vp_exit_op_vmwrite-op0x9-idx0x1)
+    - [5.6.3. mv_vp_exit_op_next_exit, OP=0x9, IDX=0x2](#563-mv_vp_exit_op_next_exit-op0x9-idx0x2)
+    - [5.6.4. mv_vp_exit_op_end_of_exit, OP=0x9, IDX=0x3](#564-mv_vp_exit_op_end_of_exit-op0x9-idx0x3)
 
 # 1. Introduction
 
@@ -798,6 +802,15 @@ Used to indicate that that the provided VPID is invalid.
 | 17 | MV_STATUS_INVALID_VPID_UNSUPPORTED_SELF | Indicates the SELF VPID is unsupported |
 | 18 | MV_STATUS_INVALID_VPID_UNSUPPORTED_PARENT | Indicates the PARENT VPID is unsupported |
 | 19 | MV_STATUS_INVALID_VPID_UNSUPPORTED_ANY | Indicates the ANY VPID is unsupported |
+
+### 3.4.11. MV_STATUS_INVALID_EXIT, VALUE=0xA
+
+Used to indicate that an exit enabling or disabling vmwrite is invalid.
+
+| Bit | Name | Description |
+| :-- | :--- | :---------- |
+| 16 | MV_STATUS_INVALID_EXIT_ALREADY_LISTENING | Indicates the caller is already listening on this exit |
+| 17 | MV_STATUS_INVALID_EXIT_NO_LISTENER | Indicates the caller was not previously listening on this exit |
 
 ## 3.5. Hypercall Inputs
 
@@ -2623,7 +2636,14 @@ When mv_vp_management_op_run_vp returns, a return reason is provided which are d
 | mv_vp_exit_t_fault | 4 | The VP stopped execution due to a fault, meaning an error condition occurred and the VP can no longer execute |
 | mv_vp_exit_t_sync_tsc | 5 | The VP stopped execution to ask for the wallclock/tsc to be synchronized |
 | mv_vp_exit_t_suspend | 6 | The VP stopped execution to tell software that the system is trying to suspend |
-| mv_vp_exit_t_max | 7 | The max value for mv_vp_exit_t |
+| mv_vp_exit_t_timeout | 7 | The VP stopped execution due to a timeout |
+| mv_vp_exit_t_monitor_trap_flag | 8 | The VP stopped execution due to monitor trap exiting |
+| mv_vp_exit_t_ept_read_violation | 9 | The VP stopped execution due to an EPT violation read |
+| mv_vp_exit_t_ept_write_violation | 10 | The VP stopped execution due to an EPT violation write |
+| mv_vp_exit_t_ept_execute_violation | 11 | The VP stopped execution due to an EPT violation execute |
+| mv_vp_exit_t_cr3_load_exiting | 12 | The VP stopped execution due to a CR3 load (i.e. wrcr3) |
+| mv_vp_exit_t_cr3_store_exiting | 13 | The VP stopped execution due to a CR3 store (i.e. rdcr3) |
+| mv_vp_exit_t_max | 14 | The max value for mv_vp_exit_t |
 
 If mv_vp_exit_t_external_interrupt is returned, software should execute mv_vp_management_op_run_vp again as soon as possible. If mv_vp_exit_t_yield is returned, software should run mv_vp_management_op_run_vp again after sleeping for REG1 number of nanoseconds. If mv_vp_exit_t_retry is returned, software should execute mv_vp_management_op_run_vp again after yielding to the OS. Software could also use a backoff model, adding a sleep whose time increases as mv_vp_management_op_run_vp continues to return mv_vp_exit_t_retry. REG1 can be used to determine the uniqueness of mv_vp_exit_t_retry. mv_vp_exit_t_hlt tells software to destroy the VP and that software finished without any errors while mv_vp_exit_t_fault tells software to destroy the VP and that an error actually occured with the error code being returned in REG1. mv_vp_exit_t_sync_tsc tells software that it needs to synchronize the the wallclock and TSC.
 
@@ -2748,4 +2768,190 @@ mv_vp_management_op_resume_vp(
 
 ## 5.6. Virtual Processor Exits
 
-TBD - Mimics VMX/SVM exits and will need a set of hypercalls to throw an event when a specific HVE event occurs.
+This set of hypercalls mimics VMX/SVM exits. They allow a guest VM to register as a listener of an exit event and be notified when specific HVE event occurs. Effectively this allows for a usermode application of a guest VM to extend the behavior of the hypervisor.
+
+### 5.6.1. mv_vp_exit_op_vmread, OP=0x9, IDX=0x0
+
+This hypercall is used to execute a vmread on an Intel CPU in the context of a virtual processor.
+
+Each virtual processor holds a reference to its associated VMCS. The VPID argument in this hypercall is used to know what VMCS should be loaded prior to executing the vmread.
+
+**Input:**
+| Register Name | Bits | Description |
+| :------------ | :--- | :---------- |
+| REG0 | 63:0 | Set to the result of mv_handle_op_open_handle |
+| REG1 | 63:0 | The vpid of vp holding the VMCS to load prior to executing vmread |
+| REG2 | 63:0 | The field of the VMCS to read from |
+
+**Output:**
+| Register Name | Bits | Description |
+| :------------ | :--- | :---------- |
+| REG0 | 63:0 | The value read from the VMCS field |
+
+**const, mv_uint64_t: MV_VP_EXIT_OP_VMREAD_IDX_VAL**
+| Value | Description |
+| :---- | :---------- |
+| 0x0000000000000000 | Defines the hypercall index for mv_vp_exit_op_vmread |
+
+```c
+static inline uint64_t
+mv_vp_exit_op_vmread(
+    struct mv_handle_t const *const handle,    /* IN */
+    uint64_t const vpid,                       /* IN */
+    uint64_t const field,                      /* IN */
+    uint64_t *const value)                     /* OUT */
+{
+    if (MV_NULL == handle) {
+        return MV_STATUS_INVALID_PARAMS0;
+    }
+
+    return _mv_vp_exit_op_vmread(
+        handle->hndl, vpid, field, value);
+}
+```
+
+### 5.6.2. mv_vp_exit_op_vmwrite, OP=0x9, IDX=0x1
+
+This hypercall is used to execute a vmwrite on an Intel CPU in the context of a virtual processor. This is how vm execution control exiting is done allowing to enable or disable exiting on an HVE event.
+
+Each virtual processor holds a reference to its associated VMCS. The VPID argument in this hypercall is used to know what VMCS should be loaded prior to executing the vmwrite.
+
+When this hypercall is used to enable vm execution exiting, the caller becomes a listener of this exit and must be able to process the exit. When this hypercall is used to disable exiting, the caller will be removed as a listener of the exit.
+
+**Input:**
+| Register Name | Bits | Description |
+| :------------ | :--- | :---------- |
+| REG0 | 63:0 | Set to the result of mv_handle_op_open_handle |
+| REG1 | 63:0 | The vpid of vp holding the VMCS to load prior to executing vmwrite |
+| REG2 | 63:0 | The field of the VMCS to write to |
+| REG3 | 63:0 | The value to write to the VMCS field |
+| REG4 | 63:0 | The mask applied to the value |
+
+**Output:**
+| Register Name | Bits | Description |
+| :------------ | :--- | :---------- |
+| REG0 | 63:0 | The previous value of the field read before writing to it |
+
+**const, mv_uint64_t: MV_VP_EXIT_OP_VMWRITE_IDX_VAL**
+| Value | Description |
+| :---- | :---------- |
+| 0x0000000000000001 | Defines the hypercall index for mv_vp_exit_op_vmwrite |
+
+```c
+static inline uint64_t
+mv_vp_exit_op_vmwrite(
+    struct mv_handle_t const *const handle,    /* IN */
+    uint64_t const vpid,                       /* IN */
+    uint64_t const field,                      /* IN */
+    uint64_t const value,                      /* IN */
+    uint64_t const mask,                       /* IN */
+    uint64_t *const old_value)                 /* OUT */
+{
+    if (MV_NULL == handle) {
+        return MV_STATUS_INVALID_PARAMS0;
+    }
+
+    return _mv_vp_exit_op_vmwrite(
+        handle->hndl, vpid, field, value, mask, old_value);
+}
+```
+
+### 5.6.3. mv_vp_exit_op_next_exit, OP=0x9, IDX=0x2
+
+This hypercall is used to retrieve the exit information. In combination with the `end_of_exit` hypercall, these are used to tell the hypervisor that a listener is currently processing an exit event.
+
+Retrieving the exit information can be done with the `vmread` hypercall or with the output values of this hypercall. e.g. When the reason is set to `mv_vp_exit_t_cr3_load_exiting`, a mov-to-cr3 event has occured and `data0` is set to the new CR3 value and `data1` to the previous CR3 value.
+
+**Input:**
+| Register Name | Bits | Description |
+| :------------ | :--- | :---------- |
+| REG0 | 63:0 | Set to the result of mv_handle_op_open_handle |
+| REG1 | 31:0 | Flags |
+| REG1 | 63:32 | Optional timeout value |
+
+**Output:**
+| Register Name | Bits | Description |
+| :------------ | :--- | :---------- |
+| REG0 | 63:0 | vpid |
+| REG1 | 15:0 | The reason value. i.e. see [`mv_vp_exit_t`](#553-mv_vp_management_op_run_vp-op0x8-idx0x2) |
+| REG1 | 63:16 | REVZ |
+| REG2 | 63:0 | A data value `data0` set depending on the exit reason |
+| REG3 | 63:0 | A data value `data1` set depending on the exit reason |
+
+**const, mv_uint64_t: MV_VP_EXIT_OP_NEXT_EXIT_IDX_VAL**
+| Value | Description |
+| :---- | :---------- |
+| 0x00000000000000002 | Defines the hypercall index for mv_vp_exit_op_next_exit |
+
+**Flags (i.e. REG1 as input):**
+| Bits | Name | Description |
+| :--: | :--- | :---------- |
+| 0 | MV_VP_EXIT_OP_NEXT_EXIT_FLAGS_HAS_TIMEOUT | When set, the optional value in the 63:32 bits of REG1 is set to a timeout in milliseconds.
+
+**Semantics of data0 and data1 depending on the reason**
+| Reason (REG1 as output) | Data0  | Data1 | Comments |
+| :---------------------- | :----- | :---- | :------- |
+<!-- | mv_vp_exit_t_basic_exit | Basic exit reason | Qualification | The vmread hypercall may need to be used for further information -->
+| mv_vp_exit_t_timeout | Unused | Unused | Special case of a timeout instead of a VM exit |
+| mv_vp_exit_t_monitor_trap_flag | The GPA value translated from RIP | The current RIP value |  |
+| mv_vp_exit_t_ept_read_violation | The GPA where the violation occured | The current RIP value |  |
+| mv_vp_exit_t_ept_write_violation | The GPA where the violation occured | The current RIP value |  |
+| mv_vp_exit_t_ept_execute_violation | The GPA where the violation occured | The current RIP value |  |
+| mv_vp_exit_t_cr3_load_exiting | The new CR3 value | The previous CR3 value |
+| mv_vp_exit_t_cr3_store_exiting | TBD | TBD |  |
+
+```c
+static inline uint64_t
+mv_vp_exit_op_next_exit(
+    struct mv_handle_t const *const handle,    /* IN */
+    uint64_t const flags,                      /* IN */
+    uint64_t *const vpid,                      /* OUT */
+    uint64_t *const reason,                    /* OUT */
+    uint64_t *const data0,                     /* OUT */
+    uint64_t *const data1)                     /* OUT */
+{
+    if (MV_NULL == handle) {
+        return MV_STATUS_INVALID_PARAMS0;
+    }
+
+    return _mv_vp_exit_op_next_exit(
+        handle->hndl, flags, vpid, reason, data0, data1);
+}
+```
+
+### 5.6.4. mv_vp_exit_op_end_of_exit, OP=0x9, IDX=0x3
+
+This hypercall is used to notify the hypervisor that an exit event has been handled by a listener. It also tells the hypervisor how it should continue the execution.
+
+**Input:**
+| Register Name | Bits | Description |
+| :------------ | :--- | :---------- |
+| REG0 | 63:0 | Set to the result of mv_handle_op_open_handle |
+| REG1 | 31:0 | Flags telling the hypervisor how it should continue to proceed |
+| REG1 | 63:32 | REVZ |
+
+**const, mv_uint64_t: MV_VP_EXIT_OP_END_OF_EXIT_IDX_VAL**
+| Value | Description |
+| :---- | :---------- |
+| 0x00000000000000003 | Defines the hypercall index for mv_vp_exit_op_end_of_exit |
+
+**Flags (i.e. REG1 as input):**
+| Bits | Name | Description |
+| :--- | :--- | :---------- |
+| 0 | MV_VP_EXIT_OP_END_OF_EXIT_FLAGS_HANDLED | If set, tells the hypervisor that the exit was properly handled by this listener, otherwise the hypervisor should try the next listener and if there aren't any left, to use its default handler |
+| 1 | MV_VP_EXIT_OP_END_OF_EXIT_FLAGS_ADVANCE | If set, tells the hypervisor to advance the instruction pointer of the VP that threw the event |
+
+```c
+static inline uint64_t
+mv_vp_exit_op_end_of_exit(
+    struct mv_handle_t const *const handle,    /* IN */
+    uint64_t const flags)                      /* IN */
+{
+    if (MV_NULL == handle) {
+        return MV_STATUS_INVALID_PARAMS0;
+    }
+
+    return _mv_vp_exit_op_end_of_exit(
+        handle->hndl, flags);
+}
+```
