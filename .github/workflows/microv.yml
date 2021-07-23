@@ -6,10 +6,6 @@ on:
   pull_request:
     paths-ignore:
       - '**.md'
-  workflow_dispatch:
-  schedule:
-    - cron: "45 1 * * *"
-
 
 jobs:
 
@@ -207,3 +203,36 @@ jobs:
           microv/drivers/winpv/xeniface/xeniface/x64/*
           microv/drivers/winpv/xeniface/include/xencontrol.h
           microv/drivers/winpv/xeniface/include/xeniface_ioctls.h
+
+  release:
+    needs: [clang-format, build-efi, build-userpace, build-drivers]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/mono-v')
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: microv_efi
+          path: microv_efi
+      - uses: actions/download-artifact@v2
+        with:
+          name: microv_userspace
+          path: microv_userspace
+      - uses: actions/download-artifact@v2
+        with:
+          name: microv_drivers
+          path: microv_drivers
+      - name: Zip
+        run: >-
+          for f in microv_efi microv_drivers microv_userspace; do
+            cd ./${f} && zip -r ../${f}.zip . && cd ..;
+          done;
+        shell: bash
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            microv_efi.zip
+            microv_userspace.zip
+            microv_drivers.zip
