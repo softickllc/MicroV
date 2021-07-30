@@ -90,7 +90,7 @@ if(HYPERVISOR_TARGET_ARCH STREQUAL "AuthenticAMD" OR HYPERVISOR_TARGET_ARCH STRE
         microv_target_source(hypercall src/linux/x64/amd/mv_handle_op_open_handle_impl.S ${HEADERS})
         microv_target_source(hypercall src/linux/x64/amd/mv_id_op_version_impl.S ${HEADERS})
         microv_target_source(hypercall src/linux/x64/amd/mv_vps_op_gla_to_gpa_impl.S ${HEADERS})
-        microv_target_source(hypercall src/linux/x64/amd/mv_vps_op_gva_to_gla_impl.S ${HEADERS})
+        # microv_target_source(hypercall src/linux/x64/amd/mv_vps_op_gva_to_gla_impl.S ${HEADERS})
     endif()
 
     if(HYPERVISOR_TARGET_ARCH STREQUAL "GenuineIntel")
@@ -99,7 +99,7 @@ if(HYPERVISOR_TARGET_ARCH STREQUAL "AuthenticAMD" OR HYPERVISOR_TARGET_ARCH STRE
         microv_target_source(hypercall src/linux/x64/intel/mv_handle_op_open_handle_impl.S ${HEADERS})
         microv_target_source(hypercall src/linux/x64/intel/mv_id_op_version_impl.S ${HEADERS})
         microv_target_source(hypercall src/linux/x64/intel/mv_vps_op_gla_to_gpa_impl.S ${HEADERS})
-        microv_target_source(hypercall src/linux/x64/intel/mv_vps_op_gva_to_gla_impl.S ${HEADERS})
+        # microv_target_source(hypercall src/linux/x64/intel/mv_vps_op_gva_to_gla_impl.S ${HEADERS})
     endif()
 endif()
 

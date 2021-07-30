@@ -74,7 +74,7 @@ ifneq ($(KERNELRELEASE),)
 		$(TARGET_MODULE)-objs += ../../hypercall/src/linux/x64/intel/mv_handle_op_open_handle_impl.o
 		$(TARGET_MODULE)-objs += ../../hypercall/src/linux/x64/intel/mv_id_op_version_impl.o
 		$(TARGET_MODULE)-objs += ../../hypercall/src/linux/x64/intel/mv_vps_op_gla_to_gpa_impl.o
-		$(TARGET_MODULE)-objs += ../../hypercall/src/linux/x64/intel/mv_vps_op_gva_to_gla_impl.o
+#		 $(TARGET_MODULE)-objs += ../../hypercall/src/linux/x64/intel/mv_vps_op_gva_to_gla_impl.o
 
     	EXTRA_CFLAGS += -I$(src)/include/x64
 		EXTRA_CFLAGS += -I$(src)/include/x64/intel
