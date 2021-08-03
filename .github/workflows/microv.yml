@@ -136,6 +136,7 @@ jobs:
       run: |
         cd .\microv\drivers
         .\build-all.ps1 -RegisterBasedAbi
+        Remove-Item builder/windows/vs2019/Windows10Release/x64/builder.cer
       shell: pwsh
 
     - uses: actions/upload-artifact@v2
@@ -156,6 +157,7 @@ jobs:
           microv/drivers/winpv/xeniface/vs2019/Windows10Release/x64/xeniface.cer
           microv/drivers/winpv/xeniface/include/xencontrol.h
           microv/drivers/winpv/xeniface/include/xeniface_ioctls.h
+        if-no-files-found: error
 
   build-drivers-nocerts:
     runs-on: windows-2019
