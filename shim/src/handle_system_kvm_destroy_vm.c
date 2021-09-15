@@ -45,6 +45,7 @@ handle_system_kvm_destroy_vm(struct shim_vm_t *const pmut_vm) NOEXCEPT
     platform_expects(NULL != pmut_vm);
 
     platform_mutex_destroy(&pmut_vm->mutex);
+    platform_mutex_destroy(&pmut_vm->slots_mutex);
 
     platform_expects(MV_STATUS_SUCCESS == mv_vm_op_destroy_vm(g_mut_hndl, pmut_vm->vmid));
 }
