@@ -2,8 +2,9 @@ name: CI Tests
 
 on:
   push:
-    branches: [ master ]
+    paths-ignore: ['**.md']
   pull_request:
+    paths-ignore: ['**.md']
     branches: [ master ]
 
 jobs:
