@@ -106,14 +106,14 @@ handle_vcpu_kvm_set_sregs(
     pmut_reg_rdl->entries[ES_BASE_IDX].val = (uint64_t)pmut_args->es.base;
 
     pmut_reg_rdl->entries[ES_ATTRIB_IDX].val = (uint64_t)(
-        ((uint64_t)((pmut_args->es.type) << ATTRIB_TYPE_SHIFT)) |
-        ((uint64_t)((pmut_args->es.s) << ATTRIB_S_SHIFT)) |
-        ((uint64_t)((pmut_args->es.dpl) << ATTRIB_DPL_SHIFT)) |
-        ((uint64_t)((pmut_args->es.present) << ATTRIB_PRESENT_SHIFT)) |
-        ((uint64_t)((pmut_args->es.avl) << ATTRIB_AVL_SHIFT)) |
-        ((uint64_t)((pmut_args->es.l) << ATTRIB_L_SHIFT)) |
-        ((uint64_t)((pmut_args->es.g) << ATTRIB_G_SHIFT)) |
-        ((uint64_t)((pmut_args->es.db) << ATTRIB_DB_SHIFT)));
+        ((uint64_t)pmut_args->es.type << ATTRIB_TYPE_SHIFT) |
+        ((uint64_t)pmut_args->es.s << ATTRIB_S_SHIFT) |
+        ((uint64_t)pmut_args->es.dpl << ATTRIB_DPL_SHIFT) |
+        ((uint64_t)pmut_args->es.present << ATTRIB_PRESENT_SHIFT) |
+        ((uint64_t)pmut_args->es.avl << ATTRIB_AVL_SHIFT) |
+        ((uint64_t)pmut_args->es.l << ATTRIB_L_SHIFT) |
+        ((uint64_t)pmut_args->es.g << ATTRIB_G_SHIFT) |
+        ((uint64_t)pmut_args->es.db << ATTRIB_DB_SHIFT));
 
     pmut_reg_rdl->entries[CS_SELECTOR_IDX].val = (uint64_t)mv_reg_t_cs_selector;
     pmut_reg_rdl->entries[CS_LIMIT_IDX].val = (uint64_t)mv_reg_t_cs_limit;
