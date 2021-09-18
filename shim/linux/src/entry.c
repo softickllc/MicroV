@@ -871,9 +871,12 @@ dispatch_vcpu_kvm_get_sregs(
         return -EINVAL;
     }
 
-    platform_copy_to_user(user_args, &mut_args, sizeof(struct kvm_sregs));
+    if (platform_copy_to_user(user_args, &mut_args, sizeof(struct kvm_sregs))) {
+        bferror("platform_copy_from_user failed");
+        return -EINVAL;
+    }
 
-    return (long)1;
+    return 0;
 }
 
 static long
