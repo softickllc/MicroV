@@ -19,10 +19,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+set(GIT_TAG         83f8335558af2f4ac874890d013538b751d6be60)
+
 FetchContent_Declare(
     hypervisor
     GIT_REPOSITORY  https://github.com/bareflank/hypervisor.git
-    GIT_TAG         83f8335558af2f4ac874890d013538b751d6be60
+    GIT_TAG         ${GIT_TAG}
 )
 
 FetchContent_GetProperties(hypervisor)
@@ -35,3 +37,6 @@ if(NOT hypervisor_POPULATED)
     FetchContent_Populate(hypervisor)
     add_subdirectory(${hypervisor_SOURCE_DIR} ${hypervisor_BINARY_DIR})
 endif()
+
+include(${bsl_SOURCE_DIR}/cmake/function/bf_check_dependency.cmake)
+bf_check_dependency(hypervisor ${GIT_TAG})
