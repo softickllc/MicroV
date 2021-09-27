@@ -136,6 +136,8 @@ extern "C"
     extern mv_status_t g_mut_mv_pp_op_clr_shared_page_gpa;
     /** @brief stores the return value for mv_pp_op_set_shared_page_gpa */
     extern mv_status_t g_mut_mv_pp_op_set_shared_page_gpa;
+    /** @brief stores the return value for mv_pp_op_msr_get_supported_list */
+    extern mv_status_t g_mut_mv_pp_op_msr_get_supported_list;
 
     /**
      * <!-- description -->
@@ -209,6 +211,29 @@ extern "C"
 #endif
 
         return g_mut_mv_pp_op_set_shared_page_gpa;
+    }
+
+    /**
+     * <!-- description -->
+     *   @brief This hypercall returns the list of supported MSRs.
+     *
+     * <!-- inputs/outputs -->
+     *   @param hndl Set to the result of mv_handle_op_open_handle
+     *   @return Returns MV_STATUS_SUCCESS on success, MV_STATUS_FAILURE_UNKNOWN
+     *     and friends on failure.
+     */
+    NODISCARD static inline mv_status_t
+    mv_pp_op_msr_get_supported_list(uint64_t const hndl) NOEXCEPT
+    {
+#ifdef __cplusplus
+        bsl::expects(MV_INVALID_HANDLE != hndl);
+        bsl::expects(hndl > ((uint64_t)0));
+#else
+    platform_expects(MV_INVALID_HANDLE != hndl);
+    platform_expects(hndl > ((uint64_t)0));
+#endif
+
+        return g_mut_mv_pp_op_msr_get_supported_list;
     }
 
     /* -------------------------------------------------------------------------- */
