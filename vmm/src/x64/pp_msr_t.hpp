@@ -72,6 +72,38 @@ namespace microv
                 {.reg = 0x0000001BUL, .val = 1UL},    // apic_base
             }};
 
+#ifdef INTEGRATION_MOCK
+#define STATIC
+        /// @brief stores the total number of supported msrs
+        static constexpr auto total_supported_msrs{610_umx};
+        /// @brief stores the supported msrs
+        bsl::array<hypercall::mv_rdl_entry_t, total_supported_msrs.get()>
+            supported_msrs{};    // NOLINT
+#else
+#define STATIC static    // NOLINT
+        /// @brief stores the total number of supported msrs
+        static constexpr auto total_supported_msrs{13_umx};
+        /// @brief stores the supported msrs
+        static constexpr const bsl::array<hypercall::mv_rdl_entry_t, total_supported_msrs.get()>
+            supported_msrs{{
+                {.reg = 0xC0000081UL, .val = 1UL},    // star
+                {.reg = 0xC0000082UL, .val = 1UL},    // lstar
+                {.reg = 0xC0000083UL, .val = 1UL},    // cstar
+                {.reg = 0xC0000084UL, .val = 1UL},    // fmask
+                {.reg = 0xC0000102UL, .val = 1UL},    // kernel_gs_base
+
+                {.reg = 0xC0000080UL, .val = 1UL},    // efer
+                {.reg = 0xC0000100UL, .val = 1UL},    // fs_base
+                {.reg = 0xC0000101UL, .val = 1UL},    // gs_base
+                {.reg = 0x00000174UL, .val = 1UL},    // sysenter_cs
+                {.reg = 0x00000175UL, .val = 1UL},    // sysenter_esp
+                {.reg = 0x00000176UL, .val = 1UL},    // sysenter_eip
+                {.reg = 0x00000277UL, .val = 1UL},    // pat
+
+                {.reg = 0x0000001BUL, .val = 1UL},    // apic_base
+            }};
+#endif
+
     public:
         /// <!-- description -->
         ///   @brief Initializes this pp_msr_t.
@@ -99,6 +131,22 @@ namespace microv
             bsl::discard(intrinsic);
 
             m_assigned_ppid = ~ppid;
+
+#ifdef INTEGRATION_MOCK
+            bsl::safe_idx mut_i{};
+            for (auto &entry : pp_msr_t::supported_msrs) {
+                entry.reg = mut_i.get();
+                entry.val = 1UL;
+                ++mut_i;
+            }
+
+            constexpr auto star{0xC0000081_umx};
+            constexpr auto pat{0x00000277_umx};
+            constexpr auto apic_base{0x0000001B_umx};
+            supported_msrs.at_if(0_idx)->reg = star.get();
+            supported_msrs.at_if(1_idx)->reg = pat.get();
+            supported_msrs.at_if(2_idx)->reg = apic_base.get();
+#endif
         }
 
         /// <!-- description -->
