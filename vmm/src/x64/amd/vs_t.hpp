@@ -2512,6 +2512,10 @@ namespace microv
                 bsl::expects(mut_sys.bf_vs_op_write(this->id(), vint_a_idx, {}));
             }
 
+            bsl::debug() << "---------------------> "    // --
+                         << "injecting interrupt "       // --
+                         << bsl::hex(mut_vector)         // --
+                         << bsl::endl;                   // --
             constexpr auto valid{0x80000000_u64};
             return mut_sys.bf_vs_op_write(this->id(), idx, mut_vector | valid);
         }
