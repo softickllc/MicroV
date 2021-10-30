@@ -49,6 +49,7 @@
 NODISCARD int64_t
 handle_system_kvm_get_supported_cpuid(struct kvm_cpuid2 *const pmut_ioctl_args) NOEXCEPT
 {
+    int64_t mut_ret = SHIM_FAILURE;
     uint32_t const init_fun = ((uint32_t)0x00000000);
     uint32_t const init_xfun = ((uint32_t)0x80000000);
     uint32_t mut_fun = init_fun;
@@ -57,19 +58,20 @@ handle_system_kvm_get_supported_cpuid(struct kvm_cpuid2 *const pmut_ioctl_args) 
     uint32_t mut_xfun_max;
     uint64_t mut_i;
     struct mv_cdl_entry_t mut_cdl_entry;
-
-    struct mv_cdl_t *const pmut_cdl = (struct mv_cdl_t *)shared_page_for_current_pp();
-    platform_expects(NULL != pmut_cdl);
+    struct mv_cdl_t *pmut_cdl;
 
     if (detect_hypervisor()) {
         bferror("The shim is not running in a VM. Did you forget to start MicroV?");
-        return SHIM_FAILURE;
+        goto ret;
     }
 
     if (!((struct kvm_cpuid_entry2 *)pmut_ioctl_args->entries)) {
         bferror("entries array not allocated");
-        return SHIM_FAILURE;
+        goto ret;
     }
+
+    pmut_cdl = (struct mv_cdl_t *)shared_page_for_current_pp();
+    platform_expects(NULL != pmut_cdl);
 
     /* Start by getting the largest function and largest extended function */
     pmut_cdl->num_entries = ((uint64_t)2);
@@ -79,7 +81,7 @@ handle_system_kvm_get_supported_cpuid(struct kvm_cpuid2 *const pmut_ioctl_args) 
     platform_expects(MV_INVALID_HANDLE != g_mut_hndl);
     if (mv_pp_op_cpuid_get_supported_list(g_mut_hndl)) {
         bferror("mv_pp_op_cpuid_get_supported_list failed");
-        return SHIM_FAILURE;
+        goto release_shared_page;
     }
 
     /* Calculate the new num_entries */
@@ -89,13 +91,14 @@ handle_system_kvm_get_supported_cpuid(struct kvm_cpuid2 *const pmut_ioctl_args) 
 
     if (pmut_cdl->num_entries >= MV_CDL_MAX_ENTRIES) {
         bferror("num_entries exceeds MV_CDL_MAX_ENTRIES");
-        return SHIM_FAILURE;
+        goto release_shared_page;
     }
 
     if (pmut_cdl->num_entries > ((uint64_t)pmut_ioctl_args->nent)) {
         bfdebug("CDL entries is larger than kvm_cpuid2 entries");
         pmut_ioctl_args->nent = ((uint32_t)pmut_cdl->num_entries);
-        return SHIM_2BIG;
+        mut_ret = SHIM_2BIG;
+        goto release_shared_page;
     }
 
     mut_i = ((uint64_t)0);
@@ -112,7 +115,8 @@ handle_system_kvm_get_supported_cpuid(struct kvm_cpuid2 *const pmut_ioctl_args) 
     platform_expects(MV_INVALID_HANDLE != g_mut_hndl);
     if (mv_pp_op_cpuid_get_supported_list(g_mut_hndl)) {
         bferror("mv_pp_op_cpuid_get_supported_list failed");
-        return SHIM_FAILURE;
+        mut_ret = SHIM_FAILURE;
+        goto release_shared_page;
     }
 
     for (mut_i = ((uint64_t)0); mut_i < ((uint64_t)pmut_cdl->num_entries); ++mut_i) {
@@ -127,5 +131,11 @@ handle_system_kvm_get_supported_cpuid(struct kvm_cpuid2 *const pmut_ioctl_args) 
     }
     pmut_ioctl_args->nent = ((uint32_t)pmut_cdl->num_entries);
 
-    return SHIM_SUCCESS;
+    mut_ret = SHIM_SUCCESS;
+
+release_shared_page:
+    release_shared_page_for_current_pp();
+
+ret:
+    return mut_ret;
 }
