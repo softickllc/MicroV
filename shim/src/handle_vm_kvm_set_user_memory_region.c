@@ -111,6 +111,15 @@ set_user_memory_region_is_valid(struct kvm_userspace_memory_region const *const 
     mut_size = (int64_t)args->memory_size;
     (void) pmut_vm;
 
+    bfdebug("set_user_memory_region:");
+    bfdebug_x64("  flags", args->flags);
+    bfdebug_x64("  guest_phys_addr", args->guest_phys_addr);
+    bfdebug_x64("  memory_size", args->memory_size);
+    bfdebug_x64("  slot", args->slot);
+    bfdebug_x64("  userspace_addr", args->userspace_addr);
+    bfdebug_x64("  userspace_addr (end)", args->userspace_addr + args->memory_size);
+    bfdebug_x64("  mut_size", (uint64_t)mut_size);
+
     if (args->memory_size > (uint64_t)INT64_MAX) {
         bferror("args->memory_size is out of bounds");
         return SHIM_FAILURE;
@@ -176,6 +185,7 @@ set_user_memory_region_is_valid(struct kvm_userspace_memory_region const *const 
 NODISCARD int64_t
 add_memory_region(struct kvm_userspace_memory_region const *const args, struct shim_vm_t *const pmut_vm) NOEXCEPT
 {
+    int64_t mut_ret = SHIM_FAILURE;
     struct mv_mdl_t *pmut_mut_mdl;
 
     int64_t mut_i;
@@ -190,9 +200,6 @@ add_memory_region(struct kvm_userspace_memory_region const *const args, struct s
     platform_expects(NULL != args);
     platform_expects(NULL != pmut_vm);
 
-    pmut_mut_mdl = (struct mv_mdl_t *)shared_page_for_current_pp();
-    platform_expects(NULL != pmut_mut_mdl);
-
     mut_slot_id = get_slot_id(args->slot);
     mut_slot_as = get_slot_as(args->slot);
     mut_dst = args->guest_phys_addr;
@@ -201,19 +208,24 @@ add_memory_region(struct kvm_userspace_memory_region const *const args, struct s
 
     platform_memcpy(&(pmut_vm->slots[mut_slot_id]), args, sizeof(pmut_vm->slots[mut_slot_id]));
 
-    pmut_mut_mdl->num_entries = ((uint64_t)0);
     if (platform_mlock((void *)(mut_src), (uint64_t)mut_size, &(pmut_vm->os_info[mut_slot_id]))) {
             bferror("platform_mlock failed");
-            goto platform_mlock_failed;
+            goto ret;
     }
+
+    pmut_mut_mdl = (struct mv_mdl_t *)shared_page_for_current_pp();
+    platform_expects(NULL != pmut_mut_mdl);
+    bfdebug_d32("-- current_cpu_1 ", platform_current_cpu());
+
+    pmut_mut_mdl->num_entries = ((uint64_t)0);
 
     for (mut_i = ((int64_t)0); mut_i < mut_size; mut_i += (int64_t)HYPERVISOR_PAGE_SIZE) {
         uint64_t const dst = mut_dst + (uint64_t)mut_i;
         uint64_t const src = platform_virt_to_phys_user(mut_src + (uint64_t)mut_i);
 
         if (((uint64_t)0) == src) {
-            bferror("platform_virt_to_phys_user failed");
-            goto mv_vm_op_mmio_map_failed;
+            bferror_x64("platform_virt_to_phys_user failed", mut_src + (uint64_t)mut_i);
+            goto undo_mv_vm_op_mmio_map;
         }
 
         pmut_mut_mdl->entries[pmut_mut_mdl->num_entries].dst = dst;
@@ -234,8 +246,9 @@ add_memory_region(struct kvm_userspace_memory_region const *const args, struct s
         ///
         if (pmut_mut_mdl->num_entries >= MV_MDL_MAX_ENTRIES) {
             if (mv_vm_op_mmio_map(g_mut_hndl, pmut_vm->id, MV_SELF_ID)) {
-                bferror("mv_vm_op_mmio_map failed");
-                goto mv_vm_op_mmio_map_failed;
+                bfdebug_d32("-- current_cpu_2 ", platform_current_cpu());
+                bferror_d64("mv_vm_op_mmio_map failed", pmut_mut_mdl->num_entries);
+                goto undo_mv_vm_op_mmio_map;
             }
             pmut_mut_mdl->num_entries = ((uint64_t)0);
         }
@@ -246,8 +259,8 @@ add_memory_region(struct kvm_userspace_memory_region const *const args, struct s
 
     if (((uint64_t)0) != pmut_mut_mdl->num_entries) {
         if (mv_vm_op_mmio_map(g_mut_hndl, pmut_vm->id, MV_SELF_ID)) {
-            bferror("mv_vm_op_mmio_map failed");
-            goto mv_vm_op_mmio_map_failed;
+            bferror_d64("mv_vm_op_mmio_map failed 2", pmut_mut_mdl->num_entries);
+            goto undo_mv_vm_op_mmio_map;
         }
 
         mv_touch();
@@ -256,8 +269,10 @@ add_memory_region(struct kvm_userspace_memory_region const *const args, struct s
         mv_touch();
     }
 
-    return SHIM_SUCCESS;
-mv_vm_op_mmio_map_failed:
+    mut_ret = SHIM_SUCCESS;
+    goto release_shared_page;
+
+undo_mv_vm_op_mmio_map:
 
     /// NOTE:
     /// - If an error occurs, we need to undo what we have already started.
@@ -309,15 +324,20 @@ mv_vm_op_mmio_map_failed:
         mv_touch();
     }
 
-    platform_expects(SHIM_SUCCESS == platform_munlock((void *)mut_src, args->memory_size, pmut_vm->os_info[mut_slot_id]));
-platform_mlock_failed:
+release_shared_page:
+    release_shared_page_for_current_pp();
 
-    return SHIM_FAILURE;
+    platform_expects(SHIM_SUCCESS == platform_munlock((void *)mut_src, args->memory_size, pmut_vm->os_info[mut_slot_id]));
+
+ret:
+    return mut_ret;
 }
 
 NODISCARD int64_t
 remove_memory_region(struct kvm_userspace_memory_region const *const args, struct shim_vm_t *const pmut_vm) NOEXCEPT
 {
+    int64_t mut_ret = SHIM_FAILURE;
+
     struct mv_mdl_t *pmut_mut_mdl;
 
     int64_t mut_i;
@@ -344,7 +364,7 @@ remove_memory_region(struct kvm_userspace_memory_region const *const args, struc
 
     if (platform_mlock((void *)(mut_src), (uint64_t)mut_size, &(pmut_vm->os_info[mut_slot_id]))) {
             bferror("platform_mlock failed");
-            goto platform_mlock_failed;
+            goto release_shared_page;
     }
 
     for (mut_i = ((int64_t)0); mut_i < mut_size; mut_i += (int64_t)HYPERVISOR_PAGE_SIZE) {
@@ -375,12 +395,17 @@ remove_memory_region(struct kvm_userspace_memory_region const *const args, struc
         mv_touch();
     }
 
-platform_mlock_failed:
-    platform_expects(SHIM_SUCCESS == platform_munlock((void *)mut_src, mut_size, pmut_vm->os_info[mut_slot_id]));
+    mut_ret = SHIM_SUCCESS;
 
+release_shared_page:
+    release_shared_page_for_current_pp();
+
+    platform_expects(
+        SHIM_SUCCESS == platform_munlock(
+            (void *)mut_src, (uint64_t)mut_size, pmut_vm->os_info[mut_slot_id]));
     pmut_vm->slots[mut_slot_id].memory_size = 0;
 
-    return 0;
+    return mut_ret;
 }
 
 NODISCARD int64_t
@@ -439,8 +464,6 @@ NODISCARD int64_t
 handle_vm_kvm_set_user_memory_region(
     struct kvm_userspace_memory_region const *const args, struct shim_vm_t *const pmut_vm) NOEXCEPT
 {
-    struct mv_mdl_t *pmut_mut_mdl;
-
     int64_t mut_rc;
     int64_t mut_size;
 
@@ -456,9 +479,6 @@ handle_vm_kvm_set_user_memory_region(
         bferror("The shim is not running in a VM. Did you forget to start MicroV?");
         return SHIM_FAILURE;
     }
-
-    pmut_mut_mdl = (struct mv_mdl_t *)shared_page_for_current_pp();
-    platform_expects(NULL != pmut_mut_mdl);
 
     mut_slot_id = get_slot_id(args->slot);
     mut_slot_as = get_slot_as(args->slot);
