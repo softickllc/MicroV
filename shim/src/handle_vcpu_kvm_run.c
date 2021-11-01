@@ -224,6 +224,9 @@ NODISCARD int64_t
 handle_vcpu_kvm_run(struct shim_vcpu_t *const pmut_vcpu) NOEXCEPT
 {
     enum mv_exit_reason_t mut_exit_reason;
+
+    bferror("handle_vcpu_kvm_run");
+
     platform_expects(NULL != pmut_vcpu);
     platform_expects(NULL != pmut_vcpu->run);
 
@@ -232,7 +235,17 @@ handle_vcpu_kvm_run(struct shim_vcpu_t *const pmut_vcpu) NOEXCEPT
         return return_failure(pmut_vcpu);
     }
 
+    bfdebug_x8("kvm_run: immediate_exit ", pmut_vcpu->run->immediate_exit);
+    if (pmut_vcpu->run->request_interrupt_window) {
+        bferror("kvm_run: user requested interrupt window");
+        pmut_vcpu->run->if_flag = 1;
+        pmut_vcpu->run->ready_for_interrupt_injection = 1;
+        pmut_vcpu->run->exit_reason = KVM_EXIT_IRQ_WINDOW_OPEN;
+        return SHIM_SUCCESS;
+    }
+
     while (0 == (int32_t)pmut_vcpu->run->immediate_exit) {
+        bferror("start run");
         if (platform_interrupted()) {
             break;
         }
@@ -240,10 +253,12 @@ handle_vcpu_kvm_run(struct shim_vcpu_t *const pmut_vcpu) NOEXCEPT
         mut_exit_reason = mv_vs_op_run(g_mut_hndl, pmut_vcpu->vsid);
         switch ((int32_t)mut_exit_reason) {
             case mv_exit_reason_t_failure: {
+                bferror("run: failure exit");
                 return handle_vcpu_kvm_run_failure(pmut_vcpu);
             }
 
             case mv_exit_reason_t_unknown: {
+                bferror("run: unknown exit");
                 return handle_vcpu_kvm_run_unknown(pmut_vcpu);
             }
 
@@ -253,6 +268,7 @@ handle_vcpu_kvm_run(struct shim_vcpu_t *const pmut_vcpu) NOEXCEPT
             }
 
             case mv_exit_reason_t_io: {
+                bferror("run: io exit");
                 return handle_vcpu_kvm_run_io(pmut_vcpu);
             }
 
@@ -267,20 +283,23 @@ handle_vcpu_kvm_run(struct shim_vcpu_t *const pmut_vcpu) NOEXCEPT
             }
 
             case mv_exit_reason_t_interrupt: {
+                bferror("run: interrupt exit");
                 continue;
             }
 
             case mv_exit_reason_t_nmi: {
+                bferror("run: nmi exit");
                 continue;
             }
 
             case mv_exit_reason_t_shutdown: {
                 bferror("run: shutdown exit");
                 pmut_vcpu->run->exit_reason = KVM_EXIT_SHUTDOWN;
-                continue;
+                return SHIM_SUCCESS;
             }
 
             default: {
+                bferror_x64("unhandled exit reason: ", mut_exit_reason);
                 break;
             }
         }
@@ -289,6 +308,8 @@ handle_vcpu_kvm_run(struct shim_vcpu_t *const pmut_vcpu) NOEXCEPT
         return return_failure(pmut_vcpu);
     }
 
+    bferror("run: INTERRUPTED");
     pmut_vcpu->run->exit_reason = KVM_EXIT_INTR;
+
     return SHIM_INTERRUPTED;
 }
