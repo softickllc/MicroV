@@ -286,7 +286,7 @@ platform_mlock(
 {
     struct page **pages = NULL;
     int rc = 0;
-    uint64_t page_count = (num >> HYPERVISOR_PAGE_SHIFT) + 1;
+    uint64_t page_count = (num >> HYPERVISOR_PAGE_SHIFT);
 
     platform_expects(((void *)0) != pmut_ptr);
     platform_expects(((uint64_t)0) != num);
@@ -344,7 +344,7 @@ platform_munlock(
     void *const pmut_ptr, uint64_t const num, uintptr_t const os_info) NOEXCEPT
 {
     struct page **pages = (struct page **)os_info;
-    uint64_t page_count = (num >> HYPERVISOR_PAGE_SHIFT) + 1;
+    uint64_t page_count = (num >> HYPERVISOR_PAGE_SHIFT);
 
     platform_expects(((void *)0) != pmut_ptr);
     platform_expects(((uint64_t)0) != num);
