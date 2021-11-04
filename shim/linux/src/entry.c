@@ -1027,12 +1027,38 @@ dispatch_vcpu_kvm_get_msrs(
 {
     struct kvm_msrs *mut_args;
     uint32_t mut_nmsrs = 0;
-    uint64_t const size = sizeof(mut_args);
+    uint64_t mut_size = 0;
 
-    mut_args = platform_alloc(size);
+    mut_args = platform_alloc(sizeof(struct kvm_msrs));
     if (!mut_args) {
         bferror("failed to allocated memory for kvm_msrs");
         return -ENOMEM;
+    }
+
+    if (platform_copy_from_user(mut_args, user_args, sizeof(mut_args->nmsrs))) {
+        bferror("platform_copy_from_user failed");
+        return -EINVAL;
+    }
+
+    if (mut_args->nmsrs > MV_RDL_MAX_ENTRIES) {
+
+        /// TODO:
+        ///
+        /// To support this case we need to call handle_vcpu_kvm_get_msrs and
+        /// copy_{from,to}_user multiple times, nmsrs modulo MV_RDL_MAX_ENTRIES
+        /// times.
+        ///
+        bferror("nmsrs > MV_RDL_MAX_ENTRIES not yet supported");
+        goto OUT_FREE;
+    }
+
+    mut_size = sizeof(mut_args->nmsrs) +
+               sizeof(mut_args->pad) +
+               sizeof(mut_args->entries[0]) * mut_args->nmsrs;
+
+    if (platform_copy_from_user(mut_args, user_args, mut_size)) {
+        bferror("platform_copy_from_user failed");
+        return -EINVAL;
     }
 
     if (handle_vcpu_kvm_get_msrs(vcpu, mut_args)) {
@@ -1043,7 +1069,7 @@ dispatch_vcpu_kvm_get_msrs(
         mut_nmsrs = mut_args->nmsrs;
     }
 
-    if (platform_copy_to_user(user_args, mut_args, size)) {
+    if (platform_copy_to_user(user_args, mut_args, mut_size)) {
         bferror("platform_copy_to_user failed");
         mut_nmsrs = (uint32_t)-EINVAL;
         goto OUT_FREE;

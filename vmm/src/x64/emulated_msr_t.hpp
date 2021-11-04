@@ -141,7 +141,7 @@ namespace microv
         get(syscall::bf_syscall_t const &sys, bsl::safe_u64 const &msr) const noexcept
             -> bsl::safe_u64
         {
-            bsl::expects(sys.bf_tls_vsid() == this->assigned_vsid());
+            bsl::discard(sys);
             bsl::discard(msr);
 
             return bsl::safe_u64::failure();
@@ -162,7 +162,7 @@ namespace microv
             bsl::safe_u64 const &msr,
             bsl::safe_u64 const &val) const noexcept -> bsl::errc_type
         {
-            bsl::expects(sys.bf_tls_vsid() == this->assigned_vsid());
+            bsl::discard(sys);
             bsl::discard(msr);
             bsl::discard(val);
 
