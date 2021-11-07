@@ -63,6 +63,8 @@ handle_system_kvm_get_msr_index_list(struct kvm_msr_list *const pmut_ioctl_args)
     pmut_rdl = (struct mv_rdl_t *)shared_page_for_current_pp();
     platform_expects(NULL != pmut_rdl);
 
+    pmut_rdl->reg1 = ((uint64_t)0);
+
     do {
         pmut_rdl->reg0 = MV_RDL_FLAG_ALL;
         pmut_rdl->num_entries = ((uint64_t)0);
