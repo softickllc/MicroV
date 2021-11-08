@@ -29,6 +29,7 @@
 
 #include <kvm_interrupt.h>
 #include <mv_types.h>
+#include <shim_vcpu_t.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -44,7 +45,8 @@ extern "C"
      *   @return SHIM_SUCCESS on success, SHIM_FAILURE on failure.
      */
     NODISCARD int64_t
-    handle_vcpu_kvm_interrupt(struct kvm_interrupt *const pmut_ioctl_args) NOEXCEPT;
+    handle_vcpu_kvm_interrupt(
+        struct shim_vcpu_t const *const vcpu, struct kvm_interrupt *const pmut_ioctl_args) NOEXCEPT;
 
 #ifdef __cplusplus
 }
