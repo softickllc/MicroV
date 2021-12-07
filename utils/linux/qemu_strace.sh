@@ -35,13 +35,14 @@ fi
 
 if [ -z ${BIOS_PATH+x} ]; then
   BIOS_PATH="${BUILD_DIR}/../../seabios/out/bios.bin"
-  if [ -f ${BIOS_PATH} ]; then
-    BIOS_ARG="-bios ${BIOS_PATH}"
-  else
-    echo ${BIOS_PATH} does not exist. Using default bios instead.
-    BIOS_PATH=
-    BIOS_ARG=
-  fi
+fi
+
+if [ -f ${BIOS_PATH} ]; then
+  BIOS_ARG="-bios ${BIOS_PATH}"
+else
+  echo ${BIOS_PATH} does not exist. Using default bios instead.
+  BIOS_PATH=
+  BIOS_ARG=
 fi
 
 TASKSET="taskset 4" # pin qemu to CPU #2
