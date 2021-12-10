@@ -26,7 +26,6 @@
 
 #ifndef KVM_CLOCK_DATA_H
 #define KVM_CLOCK_DATA_H
-
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -35,6 +34,7 @@ extern "C"
 #endif
 
 #define KVM_CLOCK_TSC_STABLE 2
+#define UNUSED_PAD_SIZE 9
 
 #pragma pack(push, 1)
 
@@ -53,7 +53,7 @@ extern "C"
         uint32_t flags;
 
         /** @brief unused padding for alignment */
-        uint32_t pad[9];
+        uint32_t pad[UNUSED_PAD_SIZE];
     };
 
 #pragma pack(pop)

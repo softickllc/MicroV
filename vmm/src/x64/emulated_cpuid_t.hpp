@@ -170,7 +170,7 @@ namespace microv
             tls_t const &tls,
             syscall::bf_syscall_t const &sys,
             intrinsic_t const &intrinsic,
-            bsl::safe_u16 const &vsid) noexcept
+            bsl::safe_u16 const &vsid) const noexcept
         {
             bsl::discard(gs);
             bsl::discard(tls);

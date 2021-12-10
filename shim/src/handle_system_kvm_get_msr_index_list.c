@@ -68,7 +68,7 @@ handle_system_kvm_get_msr_index_list(struct kvm_msr_list *const pmut_ioctl_args)
     do {
         pmut_rdl->reg0 = MV_RDL_FLAG_ALL;
         pmut_rdl->num_entries = ((uint64_t)0);
-        pmut_rdl->reg1 = mut_nmsrs;
+        pmut_rdl->reg1 = (uint64_t)mut_nmsrs;
 
         if (mv_pp_op_msr_get_supported_list(g_mut_hndl)) {
             bferror("mv_pp_op_msr_get_supported_list failed");
@@ -80,15 +80,20 @@ handle_system_kvm_get_msr_index_list(struct kvm_msr_list *const pmut_ioctl_args)
             goto release_shared_page;
         }
 
-        if (mut_nmsrs == 0U) {
+        if ( 0U == mut_nmsrs) {
             /* Check if the provided buffer is large enough to fit all MSRs */
-            if (pmut_rdl->num_entries + pmut_rdl->reg1 > pmut_ioctl_args->nmsrs) {
+            if (pmut_rdl->num_entries + pmut_rdl->reg1 > (unsigned long)pmut_ioctl_args->nmsrs) {
                 mut_nmsrs = (uint32_t)(pmut_rdl->num_entries + pmut_rdl->reg1);
                 mut_ret = SHIM_2BIG;
                 goto release_shared_page;
             }
+            mv_touch();
+        }
+        else{
+            mv_touch();
         }
 
+        
         for (mut_i = ((int64_t)0); mut_i < ((int64_t)pmut_rdl->num_entries); ++mut_i) {
             pmut_ioctl_args->indices[mut_nmsrs] = ((uint32_t)pmut_rdl->entries[mut_i].reg);
             ++mut_nmsrs;

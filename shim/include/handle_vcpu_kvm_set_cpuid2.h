@@ -41,6 +41,7 @@ extern "C"
      *
      * <!-- inputs/outputs -->
      *   @param pmut_ioctl_args the arguments provided by userspace
+     *   @param vcpu const pointer of type struct shim_vcpu_t to use
      *   @return SHIM_SUCCESS on success, SHIM_FAILURE on failure.
      */
     NODISCARD int64_t handle_vcpu_kvm_set_cpuid2(

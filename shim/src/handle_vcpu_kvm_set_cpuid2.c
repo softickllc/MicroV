@@ -36,12 +36,16 @@
 #include <shared_page_for_current_pp.h>
 #include <shim_vcpu_t.h>
 
+#define CPUID_VAL_MIN 0x40000000
+#define CPUID_VAL_MAX 0xFFFFFF00
+
 /**
  * <!-- description -->
  *   @brief Handles the execution of kvm_set_cpuid2.
  *
  * <!-- inputs/outputs -->
  *   @param pmut_ioctl_args the arguments provided by userspace
+ *   @param vcpu the struct shim_vcpu_t type to use
  *   @return SHIM_SUCCESS on success, SHIM_FAILURE on failure.
  */
 NODISCARD int64_t
@@ -63,9 +67,9 @@ handle_vcpu_kvm_set_cpuid2(
     mut_cdl = (struct mv_cdl_t *)shared_page_for_current_pp();
     platform_expects(NULL != mut_cdl);
 
-    for (mut_i = ((uint64_t)0); mut_i < pmut_ioctl_args->nent; ++mut_i) {
+    for (mut_i = ((uint64_t)0); mut_i < (uint64_t)pmut_ioctl_args->nent; ++mut_i) {
         /* Do not allow QEMU to set hypervisor cpuid leaves. */
-        if (0x40000000 == (pmut_ioctl_args->entries[mut_i].function & 0xFFFFFF00)) {
+        if ((uint64_t)CPUID_VAL_MIN == (uint64_t)(pmut_ioctl_args->entries[mut_i].function & CPUID_VAL_MAX)) {
             continue;
         }
 

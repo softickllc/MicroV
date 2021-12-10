@@ -127,11 +127,12 @@ handle_vcpu_kvm_run_unknown(struct shim_vcpu_t *const pmut_vcpu) NOEXCEPT
  *
  * <!-- inputs/outputs -->
  *   @param pmut_vcpu the VCPU associated with the IOCTL
+ *   @param pmut_exit_io pointer of type struct mv_exit_io_t to use
  *   @return SHIM_SUCCESS on success, SHIM_FAILURE on failure.
  */
 NODISCARD static int64_t
 handle_vcpu_kvm_run_io(
-    struct shim_vcpu_t *const pmut_vcpu, struct mv_exit_io_t *pmut_exit_io) NOEXCEPT
+    struct shim_vcpu_t *const pmut_vcpu, struct mv_exit_io_t *const pmut_exit_io) NOEXCEPT
 {
     platform_expects(NULL != pmut_exit_io);
 
@@ -207,37 +208,39 @@ handle_vcpu_kvm_run_io(
  *
  * <!-- inputs/outputs -->
  *   @param pmut_vcpu the VCPU associated with the IOCTL
+ *   @param pmut_exit_io pointer of type struct mv_exit_io_t to use
  *   @return SHIM_SUCCESS on success, SHIM_FAILURE on failure.
  */
 NODISCARD int64_t
-pre_run_op_io(struct shim_vcpu_t *const pmut_vcpu, struct mv_exit_io_t *pmut_exit_io) NOEXCEPT
+pre_run_op_io(struct shim_vcpu_t *const pmut_vcpu, struct mv_exit_io_t *const pmut_exit_io) NOEXCEPT
 {
     platform_expects(NULL != pmut_vcpu);
     platform_expects(NULL != pmut_vcpu->run);
     platform_expects(KVM_EXIT_IO == pmut_vcpu->run->exit_reason);
     platform_expects(NULL != pmut_exit_io);
 
-    if (pmut_vcpu->run->io.direction != KVM_EXIT_IO_IN) {
+    if ( KVM_EXIT_IO_IN  != (int)pmut_vcpu->run->io.direction) {
         return SHIM_SUCCESS;
     }
+    mv_touch();
 
     pmut_exit_io->type = MV_EXIT_IO_IN;
-    pmut_exit_io->addr = pmut_vcpu->run->io.port;
-    pmut_exit_io->reps = pmut_vcpu->run->io.count;
+    pmut_exit_io->addr = (uint64_t)pmut_vcpu->run->io.port;
+    pmut_exit_io->reps = (uint64_t)pmut_vcpu->run->io.count;
 
-    switch (pmut_vcpu->run->io.size) {
+    switch ((int)pmut_vcpu->run->io.size) {
         case 1: {
-            pmut_exit_io->size = mv_bit_size_t_8;
+            pmut_exit_io->size = (enum mv_bit_size_t)mv_bit_size_t_8;
             pmut_exit_io->data = (uint64_t)pmut_vcpu->run->io.data8;
             break;
         }
         case 2: {
-            pmut_exit_io->size = mv_bit_size_t_16;
+            pmut_exit_io->size = (enum mv_bit_size_t)mv_bit_size_t_16;
             pmut_exit_io->data = (uint64_t)pmut_vcpu->run->io.data16;
             break;
         }
         case 4: {
-            pmut_exit_io->size = mv_bit_size_t_32;
+            pmut_exit_io->size = (enum mv_bit_size_t)mv_bit_size_t_32;
             pmut_exit_io->data = (uint64_t)pmut_vcpu->run->io.data32;
             break;
         }
@@ -257,18 +260,22 @@ pre_run_op_io(struct shim_vcpu_t *const pmut_vcpu, struct mv_exit_io_t *pmut_exi
  *
  * <!-- inputs/outputs -->
  *   @param pmut_vcpu the VCPU associated with the IOCTL
+ *   @param pmut_exit the vcpu exit
  *   @return SHIM_SUCCESS on success, SHIM_FAILURE on failure.
  */
 NODISCARD int64_t
-pre_run_op(struct shim_vcpu_t *const pmut_vcpu, void *pmut_exit) NOEXCEPT
+pre_run_op(struct shim_vcpu_t *const pmut_vcpu, void *const pmut_exit) NOEXCEPT
 {
     platform_expects(NULL != pmut_vcpu);
     platform_expects(NULL != pmut_vcpu->run);
     platform_expects(NULL != pmut_exit);
 
     // TODO sync cr8
-    if (pmut_vcpu->run->cr8 != 0) {
+    if (0UL != pmut_vcpu->run->cr8) {
         bferror_x64("cr8 non zero (fixme)", pmut_vcpu->run->cr8);
+    }
+    else{
+        mv_touch();
     }
 
     switch (pmut_vcpu->run->exit_reason) {
@@ -285,7 +292,7 @@ pre_run_op(struct shim_vcpu_t *const pmut_vcpu, void *pmut_exit) NOEXCEPT
         }
     }
 
-    bferror_x64("pre_run_op: unhandled exit reason", pmut_vcpu->run->exit_reason);
+        bferror_x64("pre_run_op: unhandled exit reason", (uint64_t)pmut_vcpu->run->exit_reason);
 
     return SHIM_FAILURE;
 }
@@ -316,8 +323,8 @@ handle_vcpu_kvm_run(struct shim_vcpu_t *const pmut_vcpu) NOEXCEPT
     bfdebug_x8("kvm_run: immediate_exit ", pmut_vcpu->run->immediate_exit);
     if (pmut_vcpu->run->request_interrupt_window) {
         bferror("kvm_run: user requested interrupt window");
-        pmut_vcpu->run->if_flag = 1;
-        pmut_vcpu->run->ready_for_interrupt_injection = 1;
+        pmut_vcpu->run->if_flag = (uint8_t)1;
+        pmut_vcpu->run->ready_for_interrupt_injection = (uint8_t)1;
         pmut_vcpu->run->exit_reason = KVM_EXIT_IRQ_WINDOW_OPEN;
         return SHIM_SUCCESS;
     }

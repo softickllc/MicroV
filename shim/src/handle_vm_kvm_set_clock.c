@@ -42,10 +42,11 @@
  *
  * <!-- inputs/outputs -->
  *   @param pmut_ioctl_args the arguments provided by userspace
+ *   @param vsid uint16_t to use
  *   @return SHIM_SUCCESS on success, SHIM_FAILURE on failure.
  */
 NODISCARD int64_t
-handle_vm_kvm_set_clock(const uint16_t vsid, struct kvm_clock_data *const pmut_ioctl_args) NOEXCEPT
+handle_vm_kvm_set_clock(uint16_t const vsid, struct kvm_clock_data *const pmut_ioctl_args) NOEXCEPT
 {
     platform_expects(NULL != pmut_ioctl_args);
 
