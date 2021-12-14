@@ -2186,17 +2186,17 @@ namespace microv
             bsl::expects(mut_rdl.num_entries <= mut_rdl.entries.size());
 
             for (bsl::safe_idx mut_i{}; mut_i < mut_rdl.num_entries; ++mut_i) {
-                auto *mut_ent{mut_rdl.entries.at_if(mut_i)};
-                auto const msr{bsl::to_u64(mut_ent->reg)};
+                auto *pmut_mut_ent{mut_rdl.entries.at_if(mut_i)};
+                auto const msr{bsl::to_u64(pmut_mut_ent->reg)};
                 auto const val{this->msr_get(sys, msr)};
 
                 if (bsl::unlikely(val.is_invalid())) {
                     constexpr auto upper_one_bit{0x80000000_u64};
-                    mut_ent->reg = (msr | upper_one_bit).get();
-                    mut_ent->val = bsl::safe_u64::magic_0().get();
+                    pmut_mut_ent->reg = (msr | upper_one_bit).get();
+                    pmut_mut_ent->val = bsl::safe_u64::magic_0().get();
                 }
                 else {
-                    mut_ent->val = val.get();
+                    pmut_mut_ent->val = val.get();
                 }
             }
 

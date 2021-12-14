@@ -181,7 +181,7 @@ namespace microv
             bsl::expects(vsid == this->assigned_vsid());
 
             constexpr auto num_fun{4_umx};
-            bsl::array<bsl::safe_u32, num_fun.get()> funs{{
+            bsl::array<bsl::safe_u32, num_fun.get()> const funs{{
                 CPUID_FN0000_0000,
                 CPUID_FN0000_0001,
                 CPUID_FN8000_0000,

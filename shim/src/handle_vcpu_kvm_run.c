@@ -310,7 +310,7 @@ handle_vcpu_kvm_run(struct shim_vcpu_t *const pmut_vcpu) NOEXCEPT
 {
     int64_t mut_ret;
     enum mv_exit_reason_t mut_exit_reason;
-    void *pmut_exit;
+    void *pmut_mut_exit;
 
     platform_expects(NULL != pmut_vcpu);
     platform_expects(NULL != pmut_vcpu->run);
@@ -329,14 +329,14 @@ handle_vcpu_kvm_run(struct shim_vcpu_t *const pmut_vcpu) NOEXCEPT
         return SHIM_SUCCESS;
     }
 
-    pmut_exit = shared_page_for_current_pp();
+    pmut_mut_exit = shared_page_for_current_pp();
 
     while (0 == (int32_t)pmut_vcpu->run->immediate_exit) {
         if (platform_interrupted()) {
             break;
         }
 
-        mut_ret = pre_run_op(pmut_vcpu, pmut_exit);
+        mut_ret = pre_run_op(pmut_vcpu, pmut_mut_exit);
         if (SHIM_FAILURE == mut_ret) {
             bferror("pre_run_op failed");
             goto release_shared_page;
@@ -360,7 +360,7 @@ handle_vcpu_kvm_run(struct shim_vcpu_t *const pmut_vcpu) NOEXCEPT
             }
 
             case mv_exit_reason_t_io: {
-                mut_ret = handle_vcpu_kvm_run_io(pmut_vcpu, pmut_exit);
+                mut_ret = handle_vcpu_kvm_run_io(pmut_vcpu, pmut_mut_exit);
                 goto release_shared_page;
             }
 

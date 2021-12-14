@@ -46,7 +46,7 @@ NODISCARD int64_t
 handle_vcpu_kvm_interrupt(
     struct shim_vcpu_t const *const vcpu, struct kvm_interrupt *const pmut_ioctl_args) NOEXCEPT
 {
-    const uint32_t max_irqs = (uint32_t)256;
+    uint32_t const max_irqs = (uint32_t)256;
 
     if (detect_hypervisor()) {
         bferror("The shim is not running in a VM. Did you forget to start MicroV?");
