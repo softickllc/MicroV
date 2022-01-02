@@ -36,6 +36,7 @@ extern "C"
 
 #pragma pack(push, 1)
 
+
     /**
      * @struct kvm_irqchip
      *
@@ -44,8 +45,19 @@ extern "C"
      */
     struct kvm_irqchip
     {
-        /** @brief replace me with contents from KVM API */
-        int32_t dummy;
+        /** @brief ID of the interrupt cntroller 0 = PIC1, 1 = PIC2, 2 = IOAPIC */
+        int32_t chip_id;
+        /** @brief number of pad in entries */
+	    int32_t pad;
+        #if 0
+        /** @brief union to hold status of interrupt controller
+        struct {
+            /** @brief replace me with contents from KVM API */
+		    char dummy[512];  /* reserving space */
+	        struct kvm_pic_state pic;
+	        struct kvm_ioapic_state ioapic;
+	    }irqchip; 
+        #endif
     };
 
 #pragma pack(pop)

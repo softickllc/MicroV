@@ -28,6 +28,7 @@
 #define HANDLE_VM_KVM_GET_IRQCHIP_H
 
 #include <kvm_irqchip.h>
+#include <shim_vm_t.h>
 #include <mv_types.h>
 
 #ifdef __cplusplus
@@ -40,10 +41,11 @@ extern "C"
      *   @brief Handles the execution of kvm_get_irqchip.
      *
      * <!-- inputs/outputs -->
-     *   @param pmut_ioctl_args the arguments provided by userspace
+     *   @param pmut_vm the argument for vm handle
+     *   @param pmut_userargs the arguments provided by userspace
      *   @return SHIM_SUCCESS on success, SHIM_FAILURE on failure.
      */
-    NODISCARD int64_t handle_vm_kvm_get_irqchip(struct kvm_irqchip *const pmut_ioctl_args) NOEXCEPT;
+    NODISCARD int64_t handle_vm_kvm_get_irqchip(struct shim_vm_t *const pmut_vm, struct kvm_irqchip *const pmut_userargs) NOEXCEPT;
 
 #ifdef __cplusplus
 }

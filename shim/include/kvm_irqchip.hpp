@@ -24,30 +24,74 @@
  * SOFTWARE.
  */
 
-#ifndef HANDLE_VM_KVM_SET_IRQCHIP_H
-#define HANDLE_VM_KVM_SET_IRQCHIP_H
+#ifndef KVM_IRQCHIP_H
+#define KVM_IRQCHIP_H
 
-#include <kvm_irqchip.h>
-#include <mv_types.h>
-#include <shim_vm_t.h>
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
+#pragma pack(push, 1)
+
+
     /**
-     * <!-- description -->
-     *   @brief Handles the execution of kvm_set_irqchip.
+     * @struct kvm_irqchip
      *
-     * <!-- inputs/outputs -->
-     *   @param pmut_vm the arguments to holf VM handle
-     *   @param pmut_userargs the arguments provided by userspace.
-     *   @return SHIM_SUCCESS on success, SHIM_FAILURE on failure.
+     * <!-- description -->
+     *   @brief see /include/uapi/linux/kvm.h in Linux for more details.
      */
-    NODISCARD int64_t handle_vm_kvm_set_irqchip(struct shim_vm_t *const pmut_vm, struct kvm_irqchip *const pmut_userargs) NOEXCEPT;
+    struct kvm_irqchip
+    {
+        
+        int32_t chip_id;  /* 0 = PIC1, 1 = PIC2, 2 = IOAPIC */
+	    int32_t pad;
+        union {
+            /** @brief replace me with contents from KVM API */
+		    char dummy[512];  /* reserving space */
+	//	    struct kvm_pic_state pic;
+	//	    struct kvm_ioapic_state ioapic;
+	    } irqchip;
+    };
+
+#pragma pack(pop)
 
 #ifdef __cplusplus
 }
 #endif
+
+#endif
+
+
+#ifndef KVM_IRQCHIP_HPP
+#define KVM_IRQCHIP_HPP
+
+#include <bsl/array.hpp>
+#include <bsl/convert.hpp>
+#include <bsl/safe_integral.hpp>
+
+#pragma pack(push, 1)
+
+namespace shim
+{
+    /// @struct kvm_msrs
+    ///
+    /// <!-- description -->
+    ///   @brief see /include/uapi/linux/kvm.h in Linux for more details.
+    ///
+    struct kvm_irqchip final
+    {
+        /** @brief irqchip id */
+        bsl::uint32 chip_id;
+        /** @brief number of pad in entries */
+        bsl::uint32 pad;
+        /// @brief stores each entry in the RDL
+    };
+
+}
+
+#pragma pack(pop)
 
 #endif

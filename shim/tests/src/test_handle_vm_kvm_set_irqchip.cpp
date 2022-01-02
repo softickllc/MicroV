@@ -45,10 +45,11 @@ namespace shim
     {
         bsl::ut_scenario{"description"} = []() noexcept {
             bsl::ut_given{} = [&]() noexcept {
+                shim_vm_t mut_vm{};
                 kvm_irqchip mut_args{};
                 bsl::ut_when{} = [&]() noexcept {
                     bsl::ut_then{} = [&]() noexcept {
-                        bsl::ut_check(SHIM_SUCCESS == handle_vm_kvm_set_irqchip(&mut_args));
+                        bsl::ut_check(SHIM_SUCCESS == handle_vm_kvm_set_irqchip(&mut_vm, &mut_args));
                     };
                 };
             };
