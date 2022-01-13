@@ -23,6 +23,7 @@
 /// SOFTWARE.
 
 #include "../../include/handle_vm_kvm_create_irqchip.h"
+#include "shim_vcpu_t.h"
 #include "shim_vm_t.h"
 
 #include <helpers.hpp>
@@ -44,9 +45,10 @@ namespace shim
     tests() noexcept -> bsl::exit_code
     {
         init_tests();
-        bsl::ut_scenario{"description"} = []() noexcept {
+        bsl::ut_scenario{"GW: create irqchip when it is not created already"} = []() noexcept {
             bsl::ut_given{} = [&]() noexcept {
                 shim_vm_t mut_vm{};
+                mut_vm.is_irqchip_created = false;
                 bsl::ut_when{} = [&]() noexcept {
                     bsl::ut_then{} = [&]() noexcept {
                         bsl::ut_check(SHIM_SUCCESS == handle_vm_kvm_create_irqchip(&mut_vm));
@@ -55,6 +57,29 @@ namespace shim
             };
         };
 
+        bsl::ut_scenario{"BW: create irqchip when it is created already"} = []() noexcept {
+            bsl::ut_given{} = [&]() noexcept {
+                shim_vm_t mut_vm{};
+                mut_vm.is_irqchip_created = true;
+                bsl::ut_when{} = [&]() noexcept {
+                    bsl::ut_then{} = [&]() noexcept {
+                        bsl::ut_check(SHIM_FAILURE == handle_vm_kvm_create_irqchip(&mut_vm));
+                    };
+                };
+            };
+        };
+
+        bsl::ut_scenario{"BW: create irqchip when vcpu exists already"} = []() noexcept {
+            bsl::ut_given{} = [&]() noexcept {
+                shim_vm_t mut_vm{};
+                mut_vm.vcpus[0].fd = (uint64_t)1;
+                bsl::ut_when{} = [&]() noexcept {
+                    bsl::ut_then{} = [&]() noexcept {
+                        bsl::ut_check(SHIM_EXIST == handle_vm_kvm_create_irqchip(&mut_vm));
+                    };
+                };
+            };
+        };
         bsl::ut_scenario{"hypervisor not detected"} = []() noexcept {
             bsl::ut_given{} = [&]() noexcept {
                 shim_vm_t mut_vm{};
