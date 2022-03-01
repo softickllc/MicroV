@@ -44,6 +44,7 @@
 #include <handle_vcpu_kvm_get_tsc_khz.h>
 #include <handle_vcpu_kvm_interrupt.h>
 #include <handle_vcpu_kvm_run.h>
+#include <handle_vm_kvm_set_clock.h>
 #include <handle_vcpu_kvm_set_cpuid2.h>
 #include <handle_vcpu_kvm_set_fpu.h>
 #include <handle_vcpu_kvm_set_lapic.h>
@@ -57,8 +58,8 @@
 #include <handle_vm_kvm_create_vcpu.h>
 #include <handle_vm_kvm_destroy_vcpu.h>
 #include <handle_vm_kvm_get_clock.h>
-#include <handle_vm_kvm_set_clock.h>
 #include <handle_vm_kvm_get_irqchip.h>
+#include <handle_vm_kvm_irqfd.h>
 #include <handle_vm_kvm_set_irqchip.h>
 #include <handle_vm_kvm_set_user_memory_region.h>
 #include <linux/anon_inodes.h>
@@ -254,10 +255,12 @@ dispatch_system_kvm_get_msr_index_list(
         return -EINVAL;
     }
 
-    if (mut_args.nmsrs > MSR_LIST_MAX_INDICES) {
-        bferror("caller nmsrs exceeds MSR_LIST_MAX_INDICES");
-        return -ENOMEM;
-    }
+    //bfdebug_x32("mut_args.nmsrs",mut_args.nmsrs);
+
+    // if (mut_args.nmsrs > MSR_LIST_MAX_INDICES) {
+    //     bferror("caller nmsrs exceeds MSR_LIST_MAX_INDICES");
+    //     return -ENOMEM;
+    // }
 
     mut_ret = handle_system_kvm_get_msr_index_list(&mut_args);
     if (SHIM_2BIG == mut_ret) {
@@ -534,7 +537,6 @@ static long
 dispatch_vm_kvm_create_pit2(
     struct shim_vm_t *const pmut_vm, struct kvm_pit_config *const user_args)
 {
-    uint32_t ret;
     struct kvm_pit_config mut_args;
     uint64_t const size = sizeof(mut_args);
 
@@ -543,11 +545,11 @@ dispatch_vm_kvm_create_pit2(
         return -EINVAL;
     }
 
-    if (handle_vm_kvm_create_pit2(pmut_vm, user_args)) {
+    if (handle_vm_kvm_create_pit2(pmut_vm, &mut_args)) {
         bferror("handle_vm_kvm_create_pit2 failed");
         return -EINVAL;
     }
-    return (long)ret;
+    return 0;
 }
 
 static long
@@ -706,10 +708,23 @@ dispatch_vm_kvm_irq_line(struct kvm_irq_level *const ioctl_args)
 }
 
 static long
-dispatch_vm_kvm_irqfd(struct kvm_irqfd *const ioctl_args)
+dispatch_vm_kvm_irqfd(
+    struct shim_vm_t *const pmut_vm, struct kvm_irqfd *const pmut_ioctl_args)
 {
-    (void)ioctl_args;
-    return -EINVAL;
+    struct kvm_irqfd mut_args;
+    uint64_t const size = sizeof(mut_args);
+
+    if (platform_copy_from_user(&mut_args, pmut_ioctl_args, size)) {
+        bferror("platform_copy_from_user failed");
+        return -EINVAL;
+    }
+
+    if (handle_vm_kvm_irqfd(pmut_vm, &mut_args)) {
+        bferror("handle_vm_kvm_irqfd failed");
+        return -EINVAL;
+    }
+
+    return 0;
 }
 
 static long
@@ -936,7 +951,9 @@ dev_unlocked_ioctl_vm(
         }
 
         case KVM_IRQFD: {
-            return dispatch_vm_kvm_irqfd((struct kvm_irqfd *)ioctl_args);
+            return dispatch_vm_kvm_irqfd(
+                (struct shim_vm_t *)pmut_mut_vm,
+                (struct kvm_irqfd *)ioctl_args);
         }
 
         case KVM_REGISTER_COALESCED_MMIO: {
@@ -1303,17 +1320,20 @@ dispatch_vcpu_kvm_run(struct shim_vcpu_t *const vcpu)
     switch (handle_vcpu_kvm_run(vcpu)) {
         case SHIM_SUCCESS: {
             mut_ret = 0;
+            bferror_x32("kvm_run: SHIM_SUCCESS ,DELTA", mut_ret);
             break;
         }
 
         case SHIM_INTERRUPTED: {
             mut_ret = -EINTR;
+            bferror_x32("kvm_run: SHIM_INTERRUPTED ,DELTA", mut_ret);
             break;
         }
 
         default: {
             bferror("handle_vcpu_kvm_run failed");
             mut_ret = -EINVAL;
+            bferror_x32("kvm_run: Default ,DELTA", mut_ret);
             break;
         }
     }
