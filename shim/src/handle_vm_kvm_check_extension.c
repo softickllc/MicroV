@@ -90,6 +90,7 @@ handle_vm_kvm_check_extension(unsigned long mut_userargs, uint32_t *const pmut_r
             *pmut_ret = (uint32_t)INT16_MAX;
             break;
         }
+<<<<<<< HEAD
 
         // These are the set of capabilities we specifically don't support
         // Verified w/ qemu/kvm that it is ok to say we don't support these
@@ -132,6 +133,24 @@ handle_vm_kvm_check_extension(unsigned long mut_userargs, uint32_t *const pmut_r
             break;
         }
 
+=======
+        case KVM_CAP_MCE: {
+            *pmut_ret = (uint32_t)MICROV_MAX_MCE_BANKS;
+            break;
+        }
+        case KVM_CAP_IRQCHIP: {
+            *pmut_ret = (uint32_t)1;
+            break;
+        }
+        case KVM_CAP_IOEVENTFD: {
+            *pmut_ret = (uint32_t)1;
+            break;
+        }
+        case KVM_CAP_IRQFD: {
+            *pmut_ret = (uint32_t)1;
+            break;
+        }
+>>>>>>> Added rust-vmm reference
         default: {
             bfdebug_x64("Unsupported Extension userargs", mut_userargs);
             *pmut_ret = (uint32_t)0;
