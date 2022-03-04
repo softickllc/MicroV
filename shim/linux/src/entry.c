@@ -1299,10 +1299,22 @@ dispatch_vcpu_kvm_set_cpuid(struct kvm_cpuid *const ioctl_args)
 }
 
 static long
-dispatch_vcpu_kvm_set_cpuid2(struct kvm_cpuid2 *const ioctl_args)
+dispatch_vcpu_kvm_set_cpuid2(struct shim_vcpu_t *const vcpu, struct kvm_cpuid2 *const ioctl_args)
 {
-    (void)ioctl_args;
-    return -EINVAL;
+    struct kvm_cpuid2 mut_args;
+    uint64_t const size = sizeof(mut_args);
+
+    if (platform_copy_from_user(&mut_args, ioctl_args, size)) {
+        bferror("platform_copy_from_user failed");
+        return -EINVAL;
+    }
+
+    if (handle_vcpu_kvm_set_cpuid2(vcpu, &mut_args)) {
+        bferror("handle_vcpu_kvm_set_cpuid2 failed");
+        return -EINVAL;
+    }
+
+    return 0;
 }
 
 static long
@@ -1654,7 +1666,7 @@ dev_unlocked_ioctl_vcpu(
 
         case KVM_SET_CPUID2: {
             return dispatch_vcpu_kvm_set_cpuid2(
-                (struct kvm_cpuid2 *)ioctl_args);
+                (struct shim_vcpu_t *)pmut_mut_vcpu, (struct kvm_cpuid2 *)ioctl_args);
         }
 
         case KVM_SET_FPU: {

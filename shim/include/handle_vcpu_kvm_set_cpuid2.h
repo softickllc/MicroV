@@ -29,6 +29,7 @@
 
 #include <kvm_cpuid2.h>
 #include <mv_types.h>
+#include <shim_vcpu_t.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -40,10 +41,11 @@ extern "C"
      *   @brief Handles the execution of kvm_set_cpuid2.
      *
      * <!-- inputs/outputs -->
+     *   @param  vcpu arguments received from private data
      *   @param pmut_ioctl_args the arguments provided by userspace
      *   @return SHIM_SUCCESS on success, SHIM_FAILURE on failure.
      */
-    NODISCARD int64_t handle_vcpu_kvm_set_cpuid2(struct kvm_cpuid2 *const pmut_ioctl_args) NOEXCEPT;
+    NODISCARD int64_t handle_vcpu_kvm_set_cpuid2(struct shim_vcpu_t const *const vcpu, struct kvm_cpuid2 *const pmut_ioctl_args) NOEXCEPT;
 
 #ifdef __cplusplus
 }
