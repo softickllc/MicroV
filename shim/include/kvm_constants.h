@@ -253,6 +253,9 @@ extern "C"
 #define KVM_CAP_HYPERV_DIRECT_TLBFLUSH 175
 
 
+/** @brief defines MICROV_MAX_MCE_BANKS
+ for mp state */
+#define MICROV_MAX_MCE_BANKS 32
 #pragma pack(pop)
 
 #ifdef __cplusplus

@@ -57,8 +57,8 @@
 #include <handle_vm_kvm_create_vcpu.h>
 #include <handle_vm_kvm_destroy_vcpu.h>
 #include <handle_vm_kvm_get_clock.h>
-#include <handle_vm_kvm_set_clock.h>
 #include <handle_vm_kvm_get_irqchip.h>
+#include <handle_vm_kvm_set_clock.h>
 #include <handle_vm_kvm_set_irqchip.h>
 #include <handle_vm_kvm_set_user_memory_region.h>
 #include <linux/anon_inodes.h>
