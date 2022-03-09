@@ -44,6 +44,7 @@
 #include <handle_vcpu_kvm_get_tsc_khz.h>
 #include <handle_vcpu_kvm_interrupt.h>
 #include <handle_vcpu_kvm_run.h>
+#include <handle_vm_kvm_set_clock.h>
 #include <handle_vcpu_kvm_set_cpuid2.h>
 #include <handle_vcpu_kvm_set_fpu.h>
 #include <handle_vcpu_kvm_set_lapic.h>
@@ -1319,17 +1320,20 @@ dispatch_vcpu_kvm_run(struct shim_vcpu_t *const vcpu)
     switch (handle_vcpu_kvm_run(vcpu)) {
         case SHIM_SUCCESS: {
             mut_ret = 0;
+            bferror_x32("kvm_run: SHIM_SUCCESS ,DELTA", mut_ret);
             break;
         }
 
         case SHIM_INTERRUPTED: {
             mut_ret = -EINTR;
+            bferror_x32("kvm_run: SHIM_INTERRUPTED ,DELTA", mut_ret);
             break;
         }
 
         default: {
             bferror("handle_vcpu_kvm_run failed");
             mut_ret = -EINVAL;
+            bferror_x32("kvm_run: Default ,DELTA", mut_ret);
             break;
         }
     }
