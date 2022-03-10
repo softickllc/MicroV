@@ -90,7 +90,6 @@ handle_vm_kvm_check_extension(unsigned long mut_userargs, uint32_t *const pmut_r
             *pmut_ret = (uint32_t)INT16_MAX;
             break;
         }
-<<<<<<< HEAD
 
         // These are the set of capabilities we specifically don't support
         // Verified w/ qemu/kvm that it is ok to say we don't support these
@@ -103,14 +102,10 @@ handle_vm_kvm_check_extension(unsigned long mut_userargs, uint32_t *const pmut_r
         case KVM_CAP_GET_MSR_FEATURES: //??
         case KVM_CAP_HYPERV:
         case KVM_CAP_HYPERV_VP_INDEX:
-        case KVM_CAP_IOEVENTFD:
         case KVM_CAP_IOEVENTFD_ANY_LENGTH:
-        case KVM_CAP_IRQCHIP:
-        case KVM_CAP_IRQFD:
         case KVM_CAP_IRQFD_RESAMPLE:
         case KVM_CAP_IRQ_INJECT_STATUS:
         case KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2:
-        case KVM_CAP_MCE:
         case KVM_CAP_MULTI_ADDRESS_SPACE:
         case KVM_CAP_NESTED_STATE:
         case KVM_CAP_NOP_IO_DELAY:
@@ -132,8 +127,6 @@ handle_vm_kvm_check_extension(unsigned long mut_userargs, uint32_t *const pmut_r
             *pmut_ret = (uint32_t)0;
             break;
         }
-
-=======
         case KVM_CAP_MCE: {
             *pmut_ret = (uint32_t)MICROV_MAX_MCE_BANKS;
             break;
@@ -150,7 +143,7 @@ handle_vm_kvm_check_extension(unsigned long mut_userargs, uint32_t *const pmut_r
             *pmut_ret = (uint32_t)1;
             break;
         }
->>>>>>> Added rust-vmm reference
+
         default: {
             bfdebug_x64("Unsupported Extension userargs", mut_userargs);
             *pmut_ret = (uint32_t)0;
