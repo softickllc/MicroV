@@ -213,6 +213,9 @@ namespace microv
                     // bsl::debug() << "Found existing index " << bsl::endl;
                     return bsl::make_safe(pmut_entry->value);
                 }
+                else{
+                     bsl::touch()
+                }
             }
 
             bsl::debug() << "WARNING: UNHANDLED READ, RETURNING 0: MSR " << bsl::hex(msr)

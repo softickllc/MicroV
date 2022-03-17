@@ -609,7 +609,10 @@ namespace microv
         ///
         /// <!-- inputs/outputs -->
         ///   @param mut_sys the bf_syscall_t to use
+        ///   @param mut_tls the tls_t to use
+        ///   @param mut_page_pool the page_pool_t to use
         ///   @param mut_pp_pool the pp_pool_t to use
+        ///   @param mut_vm_pool the vm_pool_t to use
         ///   @param gla the GLA to translate to a GPA
         ///   @param cr0 the CR0 to use for translation
         ///   @param cr3 the CR3 to use for translation

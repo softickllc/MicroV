@@ -52,9 +52,9 @@ namespace hypercall
         bsl::uint64 data;
         /// @brief stores the next RIP value for continuing after the MMIO access
         bsl::uint64 nrip;
-        // @brief stores the target register for the MMIO access
+        /// @brief stores the target register for the MMIO access
         bsl::uint64 target_reg;
-        // @brief the size of memory access (1 byte, 2 bytes, 4 bytes, 8 bytes)
+        /// @brief the size of memory access (1 byte, 2 bytes, 4 bytes, 8 bytes)
         bsl::uint64 memory_access_size;
     };
 }

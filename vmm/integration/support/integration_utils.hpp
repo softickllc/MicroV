@@ -78,7 +78,8 @@ constexpr auto core0{bsl::safe_u64::magic_0()};    // NOLINT
 constexpr auto core1{bsl::safe_u64::magic_1()};    // NOLINT
 constexpr auto vsid0{bsl::safe_u16::magic_0()};    // NOLINT
 constexpr auto vsid1{bsl::safe_u16::magic_1()};    // NOLINT
-
+/// @brief defines the zero size variable
+constexpr auto STD_ZERO{0_umx};
 hypercall::mv_hypercall_t mut_hvc{};    // NOLINT
 bsl::safe_u64 hndl{};                   // NOLINT
 
@@ -387,9 +388,9 @@ namespace integration
     run_until_non_interrupt_exit(bsl::safe_u16 const &vsid) noexcept -> hypercall::mv_exit_reason_t
     {
         while (true) {
-            auto mut_run = hypercall::to_0<hypercall::mv_run_t>();
-            mut_run->num_reg_entries = 0;
-            mut_run->num_msr_entries = 0;
+            auto *const pmut_cst_run = hypercall::to_0<hypercall::mv_run_t>();
+            pmut_cst_run->num_reg_entries = STD_ZERO.get();
+            pmut_cst_run->num_msr_entries = STD_ZERO.get();
 
             auto const exit_reason{mut_hvc.mv_vs_op_run(vsid)};
             switch (exit_reason) {

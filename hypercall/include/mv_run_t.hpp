@@ -45,8 +45,10 @@ namespace hypercall
     /// @brief defines the max number of entires in the MDL
     constexpr auto MV_RUN_MAX_IOMEM_SIZE{0xEA8_u64};
 
+    /// @struct mv_run_t
+    ///
     /// <!-- description -->
-    ///   @brief TODO
+    ///   @brief see /include/uapi/linux/kvm.h in Linux for more details.
     ///
     struct mv_run_t final
     {
@@ -66,14 +68,30 @@ namespace hypercall
         bsl::array<uint8_t, MV_RUN_MAX_IOMEM_SIZE.get()> iomem;
     };
 
+    /// @struct mv_run_return_t
+    ///
+    /// <!-- description -->
+    ///   @brief see /include/uapi/linux/kvm.h in Linux for more details.
+    ///
+    // NOLINTNEXTLINE(bsl-user-defined-type-names-match-header-name)
     struct mv_run_return_t final
     {
+        /// @brief stores rflags
         uint64_t rflags;
+        /// @brief stores cr8
         uint64_t cr8;
+        /// @brief stores apic_base
         uint64_t apic_base;
+        /**
+         * <!-- description -->
+         *   @brief to hold exit status
+         */
+        // NOLINTNEXTLINE(bsl-decl-forbidden)
         union
         {
+            /// @brief stores the mv_exit_io
             struct mv_exit_io_t mv_exit_io;
+            /// @brief stores the mv_exit_mmio
             struct mv_exit_mmio_t mv_exit_mmio;
         };
     };
