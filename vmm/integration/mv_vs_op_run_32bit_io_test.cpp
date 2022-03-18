@@ -127,9 +127,6 @@ namespace hypercall
                 (bsl::uint8(0x15)), (bsl::uint8(0x16)), (bsl::uint8(0x17)), (bsl::uint8(0x18)),    // --
             };
             constexpr auto expected_addr{0x10_u64};
-            // auto mut_data{bsl::to_u8(*pmut_exit_io->data.at_if(mut_i))};
-            // auto mut_data_expected{bsl::to_u8(*expected_data.at_if(mut_i))};
-
             auto mut_expected_data_8{bsl::to_u8(*expected_data.at_if({}))};
             auto mut_expected_data_16{bsl::to_u16(*expected_data.at_if({}))};
             auto mut_expected_data_32{bsl::to_u32(*expected_data.at_if({}))};
@@ -138,8 +135,7 @@ namespace hypercall
             constexpr auto expected_size_8{mv_bit_size_t::mv_bit_size_t_8};
             constexpr auto expected_size_16{mv_bit_size_t::mv_bit_size_t_16};
             constexpr auto expected_size_32{mv_bit_size_t::mv_bit_size_t_32};
-            //constexpr auto *pmut_exit_io = 0;
-            //pmut_exit_io = nullptr;
+
             mut_exit_reason = integration::run_until_non_interrupt_exit(vsid);
             integration::verify(mut_exit_reason == mv_exit_reason_t::mv_exit_reason_t_io);
 

@@ -255,9 +255,7 @@ namespace microv
             bsl::expects(nullptr != pmut_mut_spa);
             *pmut_mut_spa = spa;
 
-            // auto *const pmut_maps_for_current_vm{m_maps.at_if(bsl::to_idx(mut_sys.bf_tls_vmid()))};
-
-            auto *const hva{mut_sys.bf_vm_op_map_direct<T>(mut_sys.bf_tls_vmid(), spa)};
+            auto const *const hva{mut_sys.bf_vm_op_map_direct<T>(mut_sys.bf_tls_vmid(), spa)};
             if (bsl::unlikely(nullptr == hva)) {
                 bsl::print<bsl::V>() << bsl::here();
                 return pp_unique_map_t<T>{};

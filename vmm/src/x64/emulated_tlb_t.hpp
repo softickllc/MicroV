@@ -632,6 +632,11 @@ namespace microv
             bsl::safe_u64 const &cr3,
             bsl::safe_u64 const &cr4) const noexcept -> hypercall::mv_translation_t
         {
+            constexpr auto mask_val1{0x3fffffff_u64};
+            constexpr auto mask_val2{0x1fffff_u64};
+            constexpr auto mask_val3{0xfff_u64};
+
+
             bsl::expects(this->assigned_vsid() == mut_sys.bf_tls_vsid());
 
             bsl::expects(gla.is_valid_and_checked());
@@ -674,7 +679,7 @@ namespace microv
             }
 
             if (bsl::safe_u64::magic_1() == pdpte.ps) {
-                return {{}, gla, get_paddr(pdpte) + (gla & 0x3fffffffUL), get_flags(pdpte), true};
+                return {{}, gla, get_paddr(pdpte) + (gla & mask_val1), get_flags(pdpte), true};
             }
 
             auto const pdt_gpa{pdpte.phys << HYPERVISOR_PAGE_SHIFT};
@@ -686,7 +691,7 @@ namespace microv
             }
 
             if (bsl::safe_u64::magic_1() == pdte.ps) {
-                return {{}, gla, get_paddr(pdte) + (gla & 0x1fffffUL), get_flags(pdte), true};
+                return {{}, gla, get_paddr(pdte) + (gla & mask_val2), get_flags(pdte), true};
             }
 
             auto const pt_gpa{pdte.phys << HYPERVISOR_PAGE_SHIFT};
@@ -697,7 +702,7 @@ namespace microv
                 return {};
             }
 
-            return {{}, gla, get_paddr(pte) + (gla & 0xfffUL), get_flags(pte), true};
+            return {{}, gla, get_paddr(pte) + (gla & mask_val3), get_flags(pte), true};
         }
     };
 }

@@ -50,6 +50,8 @@ namespace microv
         /// @brief boolean to say if this value has been set yet
         bool is_set;
     };
+
+    /// @brief stores the MAX_EMULATED_MSRS
     constexpr auto MAX_EMULATED_MSRS{200_idx};
 
     /// @class microv::emulated_msr_t
@@ -203,19 +205,16 @@ namespace microv
                 }
             }
 
-            auto mut_i{0_idx};
+           constexpr auto mut_i{0_idx};
 
             // See if we already have an entry for this MSR to update
             for (mut_i = 0_idx; mut_i < 200_idx; ++mut_i) {
                 auto *const pmut_entry{m_msrs.at_if(mut_i)};
 
                 if ((pmut_entry->is_set) && (pmut_entry->msr_num == msr.get())) {
-                    // bsl::debug() << "Found existing index " << bsl::endl;
                     return bsl::make_safe(pmut_entry->value);
                 }
-                else{
-                     bsl::touch()
-                }
+                bsl::touch();
             }
 
             bsl::debug() << "WARNING: UNHANDLED READ, RETURNING 0: MSR " << bsl::hex(msr)
@@ -252,26 +251,25 @@ namespace microv
                 auto *const pmut_entry{m_msrs.at_if(mut_i)};
 
                 if ((pmut_entry->is_set) && (pmut_entry->msr_num == msr.get())) {
-                    // bsl::debug() << "Found existing index " << bsl::endl;
                     pmut_entry->value = val.get();
                     return bsl::errc_success;
                 }
+                bsl::touch();
             }
 
             // Look for a free entry to use
             for (mut_i = 0_idx; mut_i < 200_idx; ++mut_i) {
                 auto *const pmut_entry{m_msrs.at_if(mut_i)};
+
                 // If this entry is already taken, continue
                 if (!pmut_entry->is_set) {
-                    // bsl::debug() << "Found free index " << bsl::endl;
                     pmut_entry->msr_num = msr.get();
                     pmut_entry->value = val.get();
                     pmut_entry->is_set = true;
                     return bsl::errc_success;
                 }
+                bsl::touch();
             }
-
-            bsl::debug() << __FILE__ << " " << __FUNCTION__ << " UNHANDLED" << bsl::endl;
             return bsl::errc_failure;
         }
     };

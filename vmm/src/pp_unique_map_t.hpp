@@ -89,7 +89,7 @@ namespace microv
         ///   @param pmut_spa the SPA associated with this map
         ///
         constexpr pp_unique_map_t(
-            T *const pudm_ptr,
+            const T *pudm_ptr,
             syscall::bf_syscall_t *const pmut_sys,
             bsl::safe_u64 *const pmut_spa) noexcept
             : m_ptr{pudm_ptr}

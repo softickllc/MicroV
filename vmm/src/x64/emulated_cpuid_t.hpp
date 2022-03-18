@@ -630,7 +630,6 @@ namespace microv
         set_list(syscall::bf_syscall_t const &sys, hypercall::mv_cdl_t const &cdl) noexcept
             -> bsl::errc_type
         {
-            bsl::debug() << __FILE__ << " " << __FUNCTION__ << bsl::endl;
             for (bsl::safe_idx mut_i{}; mut_i < cdl.num_entries; ++mut_i) {
                 auto const &entry{*cdl.entries.at_if(mut_i)};
                 if (bsl::unlikely(!set(sys, entry))) {

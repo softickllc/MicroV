@@ -46,8 +46,11 @@
 
 namespace microv
 {
+    /// @brief holds the opcode- of regs
     constexpr auto OPCODE_REG_USE_IMMEDIATE{0xBEEFBEEF_u64};
+    /// @brief holds decode mode 32
     constexpr auto DECODE_MODE__32{0x1_u64};
+    /// @brief hold decode mode 64
     constexpr auto DECODE_MODE__64{0x10_u64};
     [[nodiscard]] constexpr auto
     instruction_decode(
