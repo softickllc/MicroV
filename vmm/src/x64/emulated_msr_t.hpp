@@ -205,12 +205,12 @@ namespace microv
                 }
             }
 
-           constexpr auto mut_i{0_idx};
+           //constexpr auto mut_i{0_idx};
 
             // See if we already have an entry for this MSR to update
-            for (mut_i = 0_idx; mut_i < 200_idx; ++mut_i) {
+            for (bsl::safe_idx mut_i{}; mut_i < 200_idx; ++mut_i) {
                 auto *const pmut_entry{m_msrs.at_if(mut_i)};
-
+                // NOLINTNEXTLINE(bsl-boolean-operators-forbidden)
                 if ((pmut_entry->is_set) && (pmut_entry->msr_num == msr.get())) {
                     return bsl::make_safe(pmut_entry->value);
                 }
@@ -244,12 +244,12 @@ namespace microv
             bsl::discard(msr);
             bsl::discard(val);
 
-            auto mut_i{0_idx};
+            //auto mut_i{0_idx};
 
             // See if we already have an entry for this MSR to update
-            for (mut_i = 0_idx; mut_i < 200_idx; ++mut_i) {
+            for (bsl::safe_idx mut_i{}; mut_i < 200_idx; ++mut_i) {
                 auto *const pmut_entry{m_msrs.at_if(mut_i)};
-
+                // NOLINTNEXTLINE(bsl-boolean-operators-forbidden)
                 if ((pmut_entry->is_set) && (pmut_entry->msr_num == msr.get())) {
                     pmut_entry->value = val.get();
                     return bsl::errc_success;
@@ -258,7 +258,7 @@ namespace microv
             }
 
             // Look for a free entry to use
-            for (mut_i = 0_idx; mut_i < 200_idx; ++mut_i) {
+            for (bsl::safe_idx mut_i{}; mut_i < 200_idx; ++mut_i) {
                 auto *const pmut_entry{m_msrs.at_if(mut_i)};
 
                 // If this entry is already taken, continue

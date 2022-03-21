@@ -103,52 +103,52 @@ namespace microv
 
         // Convernt reg_num to hypercall::mv_reg_t
         switch (reg_num) {
-            case FD_REG_AX:
+            case (uint64_t)FD_REG_AX:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rax);
                 break;
-            case FD_REG_BX:
+            case (uint64_t)FD_REG_BX:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rbx);
                 break;
-            case FD_REG_CX:
+            case (uint64_t)FD_REG_CX:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rcx);
                 break;
-            case FD_REG_DX:
+            case (uint64_t)FD_REG_DX:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rdx);
                 break;
-            case FD_REG_SI:
+            case (uint64_t)FD_REG_SI:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rsi);
                 break;
-            case FD_REG_DI:
+            case (uint64_t)FD_REG_DI:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rdi);
                 break;
-            case FD_REG_SP:
+            case (uint64_t)FD_REG_SP:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rsp);
                 break;
-            case FD_REG_BP:
+            case (uint64_t)FD_REG_BP:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rbp);
                 break;
-            case FD_REG_R8:
+            case (uint64_t)FD_REG_R8:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r8);
                 break;
-            case FD_REG_R9:
+            case (uint64_t)FD_REG_R9:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r9);
                 break;
-            case FD_REG_R10:
+            case (uint64_t)FD_REG_R10:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r10);
                 break;
-            case FD_REG_R11:
+            case (uint64_t)FD_REG_R11:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r11);
                 break;
-            case FD_REG_R12:
+            case (uint64_t)FD_REG_R12:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r12);
                 break;
-            case FD_REG_R13:
+            case (uint64_t)FD_REG_R13:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r13);
                 break;
-            case FD_REG_R14:
+            case (uint64_t)FD_REG_R14:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r14);
                 break;
-            case FD_REG_R15:
+            case (uint64_t)FD_REG_R15:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r15);
                 break;
 
@@ -312,9 +312,9 @@ namespace microv
         }
 
         bsl::uint64 nrip{rip.get() + mut_instr_len};
-        bsl::uint64 data{0};
+        bsl::uint64 data{(bsl::uint64)0};
 
-        if (mut_register == OPCODE_REG_USE_IMMEDIATE.get()) {
+        if (OPCODE_REG_USE_IMMEDIATE.get() == mut_register) {
             data = immediate_value;
         }
         else {
@@ -338,7 +338,7 @@ namespace microv
         // ---------------------------------------------------------------------
 
         auto mut_run_return{mut_pp_pool.shared_page<hypercall::mv_run_return_t>(mut_sys)};
-        auto mut_exit_mmio{&mut_run_return->mv_exit_mmio};
+        auto mut_exit_mmio{&mut_run_return->mv_exit_mmio}; //NOLINT
 
         mut_exit_mmio->gpa = phys_addr.get();
         if (is_write.is_zero()) {

@@ -886,7 +886,10 @@ namespace microv
         ///
         /// <!-- inputs/outputs -->
         ///   @param mut_sys the bf_syscall_t to use
+        ///   @param mut_tls the tls_t to use
+        ///   @param mut_page_pool the page_pool_t to use
         ///   @param mut_pp_pool the pp_pool_t to use
+        ///   @param mut_vm_pool the vm_pool_t to use
         ///   @param gla the GLA to translate to a GPA
         ///   @return Returns mv_translation_t containing the results of the
         ///     translation.
@@ -1005,6 +1008,7 @@ namespace microv
         /// <!-- inputs/outputs -->
         ///   @param mut_sys the bf_syscall_t to use
         ///   @param mut_cdl the mv_cdl_t to read the CPUID into
+        ///   @param intrinsic the intrinsic_t to read
         ///   @return Returns bsl::errc_success on success, bsl::errc_failure
         ///     and friends otherwise
         ///

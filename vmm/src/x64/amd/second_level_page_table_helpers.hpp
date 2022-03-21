@@ -37,6 +37,7 @@
 
 namespace helpers
 {
+    /// @brief To hold the memory type
     constexpr auto MEMORY_TYPE_WB{6_u64};
 
     /// <!-- description -->

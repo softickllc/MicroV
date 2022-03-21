@@ -141,6 +141,9 @@ namespace microv
                                    (bsl::to_umx(mut_i) * HYPERVISOR_PAGE_SIZE).checked())
                                       .checked();
             }
+            else{
+                bsl::touch();
+            }
             //
             //FIXME: This doesn't consider 16-bit segment base values!!
             //
@@ -180,9 +183,7 @@ namespace microv
 
             return vmexit_failure_advance_ip_and_run;
         }
-        else {
             bsl::touch();
-        }
 
         bsl::safe_idx mut_i{};
         bsl::safe_u64 mut_spa{mut_vs_pool.io_spa(mut_sys, vsid, mut_i)};
@@ -208,9 +209,8 @@ namespace microv
                          << bsl::here();                                 // --
             return vmexit_failure_advance_ip_and_run;
         }
-        else {
-            bsl::touch();
-        }
+        bsl::touch();
+
 
         auto mut_run_return{mut_pp_pool.shared_page<hypercall::mv_run_return_t>(mut_sys)};
         bsl::expects(mut_run_return.is_valid());
