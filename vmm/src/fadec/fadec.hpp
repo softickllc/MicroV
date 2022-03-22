@@ -128,7 +128,8 @@ typedef struct
     uint8_t size;
     uint8_t _pad0;
 
-    FdOp operands[4];
+    //FdOp operands[4];
+    gsl::at(operands, 4);
 
     int64_t disp;
     int64_t imm;

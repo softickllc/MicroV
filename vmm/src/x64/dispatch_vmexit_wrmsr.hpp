@@ -69,7 +69,7 @@ namespace microv
         pp_pool_t const &pp_pool,
         vm_pool_t const &vm_pool,
         vp_pool_t const &vp_pool,
-        vs_pool_t &vs_pool,
+        vs_pool_t const &vs_pool,
         bsl::safe_u16 const &vsid) noexcept -> bsl::errc_type
     {
         bsl::discard(gs);

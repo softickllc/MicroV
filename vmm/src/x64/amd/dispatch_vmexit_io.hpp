@@ -46,22 +46,35 @@
 
 namespace microv
 {
+    ///   @brief PAGE_MASK
     constexpr auto PAGE_MASK{0xFFFFFFFFFFFFFFFF_u64 << HYPERVISOR_PAGE_SHIFT};
-
+    ///   @brief PORT_MASK
     constexpr auto PORT_MASK{0xFFFF0000_u64};
+    ///   @brief PORT_SHFT
     constexpr auto PORT_SHFT{16_u64};
+    ///   @brief REPS_MASK
     constexpr auto REPS_MASK{0x00000008_u64};
+    ///   @brief REPS_SHFT
     constexpr auto REPS_SHFT{3_u64};
+    ///   @brief TYPE_MASK
     constexpr auto TYPE_MASK{0x00000001_u64};
+    ///   @brief TYPE_SHFT
     constexpr auto TYPE_SHFT{0_u64};
+    ///   @brief STRN_MASK
     constexpr auto STRN_MASK{0x00000004_u64};
+    ///   @brief STRN_SHFT
     constexpr auto STRN_SHFT{2_u64};
-
+    ///   @brief SZ32_MASK
     constexpr auto SZ32_MASK{0x00000040_u64};
+    ///   @brief SZ32_SHFT
     constexpr auto SZ32_SHFT{6_u64};
+    ///   @brief SZ16_MASK
     constexpr auto SZ16_MASK{0x00000020_u64};
+    ///   @brief SZ16_SHFT
     constexpr auto SZ16_SHFT{5_u64};
+    ///   @brief SZ08_MASK
     constexpr auto SZ08_MASK{0x00000010_u64};
+    ///   @brief SZ08_SHFT
     constexpr auto SZ08_SHFT{4_u64};
 
     /// <!-- description -->
@@ -78,6 +91,12 @@ namespace microv
     ///   @param mut_vp_pool the vp_pool_t to use
     ///   @param mut_vs_pool the vs_pool_t to use
     ///   @param vsid the ID of the VS that generated the VMExit
+    ///   @param exitinfo1 Exit information
+    ///   @param addr Address
+    ///   @param mut_size size
+    ///   @param mut_reps reps
+    ///   @param mut_bytes bytes
+    ///   @param mut_type types
     ///   @return Returns bsl::errc_success on success, bsl::errc_failure
     ///     and friends otherwise
     ///
@@ -95,11 +114,12 @@ namespace microv
         bsl::safe_u16 const &vsid,
         bsl::safe_u64 const &exitinfo1,
         bsl::safe_u64 const &addr,
-        enum hypercall::mv_bit_size_t const &mut_size,
-        bsl::safe_u64 const &mut_reps,
-        bsl::safe_u64 const &mut_bytes,
-        bsl::safe_u64 const &mut_type) noexcept -> bsl::errc_type
+        enum hypercall::mv_bit_size_t &mut_size,
+        bsl::safe_u64 &mut_reps,
+        bsl::safe_u64 &mut_bytes,
+        bsl::safe_u64 &mut_type) noexcept -> bsl::errc_type
     {
+        (void)gs;
         using page_t = bsl::array<uint8_t, HYPERVISOR_PAGE_SIZE.get()>;
 
         bsl::expects(!mut_sys.is_the_active_vm_the_root_vm());
@@ -127,13 +147,14 @@ namespace microv
         if (num_pages > bsl::safe_u64::magic_2()) {
             bsl::error() << "FIXME: Too many pages requested: " << num_pages    // --
                          << bsl::endl                                           // --
-                         << bsl::here;                                          // --
+                         << bsl::here();                                          // --
             switch_to_root(
                 mut_tls, mut_sys, intrinsic, mut_vm_pool, mut_vp_pool, mut_vs_pool, true);
             return vmexit_failure_advance_ip_and_run;
         }
 
-        for (auto mut_i{0_idx}; mut_i < num_pages; ++mut_i) {
+        // bsl::safe_u64 mut_i{};
+        for (bsl::safe_idx mut_i{}; mut_i < num_pages; ++mut_i) {
             bsl::safe_u64 mut_spa{};
             bsl::safe_u64 mut_gpa{};
             if (mut_i != bsl::safe_idx::magic_0()) {
@@ -183,7 +204,7 @@ namespace microv
 
             return vmexit_failure_advance_ip_and_run;
         }
-            bsl::touch();
+        bsl::touch();
 
         bsl::safe_idx mut_i{};
         bsl::safe_u64 mut_spa{mut_vs_pool.io_spa(mut_sys, vsid, mut_i)};
@@ -201,7 +222,7 @@ namespace microv
                          << bsl::here();                              // --
             return vmexit_failure_advance_ip_and_run;
         }
-        else if (bsl::unlikely(hypercall::MV_EXIT_IO_MAX_DATA < mut_bytes)) {
+        if (bsl::unlikely(hypercall::MV_EXIT_IO_MAX_DATA < mut_bytes)) {
             bsl::error() << "FIXME: mv_exit_io_t.data will overflow:"    // --
                          << " mut_bytes = "                              // --
                          << bsl::hex(mut_bytes)                          // --
@@ -214,7 +235,7 @@ namespace microv
 
         auto mut_run_return{mut_pp_pool.shared_page<hypercall::mv_run_return_t>(mut_sys)};
         bsl::expects(mut_run_return.is_valid());
-        auto mut_exit_io{&mut_run_return->mv_exit_io};
+        auto *mut_exit_io{&mut_run_return->mv_exit_io}; //NOLINT[cppcoreguidelines-pro-type-union-access,-warnings-as-errors]
 
         auto const bytes_cur_page{(HYPERVISOR_PAGE_SIZE - idx).checked()};
 
@@ -229,9 +250,7 @@ namespace microv
 
                 return vmexit_failure_advance_ip_and_run;
             }
-            else {
-                bsl::touch();
-            }
+            bsl::touch();
 
             bsl::builtin_memcpy(mut_exit_io->data.data(), data.data(), data.size_bytes());
         }
@@ -247,7 +266,7 @@ namespace microv
                              << bsl::here();                        // --
                 return vmexit_failure_advance_ip_and_run;
             }
-            else if (bsl::unlikely((mut_spa & ~PAGE_MASK).is_pos())) {
+            if (bsl::unlikely((mut_spa & ~PAGE_MASK).is_pos())) {
                 bsl::error() << "SPA should be page aligned but is "    // --
                              << bsl::hex(mut_spa) << bsl::endl          // --
                              << bsl::here();                            // --
@@ -324,10 +343,10 @@ namespace microv
         auto const rcx{mut_sys.bf_tls_rcx()};
         auto const addr{(exitinfo1 & PORT_MASK) >> PORT_SHFT};
 
-        auto mut_type{0_u64};
+        bsl::safe_u64 mut_type{};
         enum hypercall::mv_bit_size_t mut_size{};
-        auto mut_reps{1_u64};
-        auto mut_bytes{0_u64};
+        bsl::safe_u64 mut_reps{};
+        bsl::safe_u64 mut_bytes{};
 
         if (((exitinfo1 & REPS_MASK) >> REPS_SHFT).is_pos()) {
             mut_reps = rcx.get();

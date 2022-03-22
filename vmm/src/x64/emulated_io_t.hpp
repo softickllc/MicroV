@@ -214,15 +214,15 @@ namespace microv
         ///     resuming a guest.
         ///
         /// <!-- inputs/outputs -->
-        ///   @param spa the spa to set
+        ///   @param spa_set the spa to set
         ///   @param idx the idx to set the spa into
         ///
         constexpr void
-        set_spa(bsl::safe_u64 const &spa, bsl::safe_idx const &idx) noexcept
+        set_spa(bsl::safe_u64 const &spa_set, bsl::safe_idx const &idx) noexcept
         {
             bsl::expects(m_assigned_vsid.is_valid_and_checked());
             bsl::expects(idx < max_spa);
-            *m_mut_spas.at_if(idx) = spa;
+            *m_mut_spas.at_if(idx) = spa_set;
         }
     };
 }

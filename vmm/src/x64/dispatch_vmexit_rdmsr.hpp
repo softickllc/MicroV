@@ -94,8 +94,8 @@ namespace microv
             return vmexit_failure_advance_ip_and_run;
         }
 
-        auto msr_hi{((val >> 32_u64) & mask32)};
-        auto msr_lo{(val & mask32)};
+        auto const msr_hi{((val >> 32_u64) & mask32)};
+        auto const msr_lo{(val & mask32)};
 
         mut_sys.bf_tls_set_rax(msr_lo);
         mut_sys.bf_tls_set_rdx(msr_hi);

@@ -428,9 +428,10 @@ namespace microv
             ///   not 1:1, we will also need to perform this translation
             ///   on the root VM as well.
             ///
-
+            bsl::safe_u64 mut_ret;
             if (sys.is_the_active_vm_the_root_vm()) {
-                return gpa;
+                mut_ret = gpa;
+                //return gpa;
             }
             else {
                 constexpr auto gpa_mask{0xFFFFFFFFFFFFF000_u64};
@@ -445,8 +446,10 @@ namespace microv
                     return bsl::safe_u64::failure();
                 }
 
-                return {(ents.l0e->phys << HYPERVISOR_PAGE_SHIFT) | (gpa & ~gpa_mask)};
+                //return {(ents.l0e->phys << HYPERVISOR_PAGE_SHIFT) | (gpa & ~gpa_mask)};
+                mut_ret = {(ents.l0e->phys << HYPERVISOR_PAGE_SHIFT) | (gpa & ~gpa_mask)};
             }
+            return mut_ret;
         }
     };
 }

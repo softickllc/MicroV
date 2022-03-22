@@ -81,6 +81,7 @@ namespace microv
             hypercall::mv_cdl_entry_t const &entry,
             bsl::source_location const &loc = bsl::here()) noexcept
         {
+            (void)loc;
             constexpr auto upper16{16_u32};
             output << "CPUID leaf Fn"                                                    // --
                    << bsl::fmt("04x", bsl::to_u16_unsafe(entry.fun >> upper16.get()))    // --
@@ -97,8 +98,8 @@ namespace microv
                    << bsl::hex(entry.ecx)                                                // --
                    << ":"                                                                // --
                    << bsl::hex(entry.edx)                                                // --
-                   << "] was requested\n"                                                // --
-                   << loc;                                                               // --
+                   << "] was requested"                                                  // --
+                   << bsl::endl;                                                         // --
         }
 
     public:
@@ -477,7 +478,7 @@ namespace microv
             bsl::discard(sys);
 
             // FIXME: not all CPUID func's have subleaves. Of the ones QEMU uses, only func=4 has subleaves
-            auto mut_idx{0_idx};
+            auto mut_idx{bsl::to_idx(0_idx)};
             if (4U == mut_entry.fun) {
                 mut_idx = bsl::to_idx(mut_entry.idx);
             }
@@ -489,36 +490,37 @@ namespace microv
 
             if (((unsigned long)mut_entry.fun < CPUID_NUM_STD_FUNCTIONS.get())) {
                 // bsl::debug() << "Trying emulated CPUID FN" << bsl::hex(mut_entry.fun) << " " << bsl::hex(mut_entry.idx) << bsl::endl;
-                auto const *const pmut_entry{m_std_leaves.at_if(bsl::to_idx(mut_entry.fun))->at_if(mut_idx)};
+                auto const *const cst_entry{m_std_leaves.at_if(bsl::to_idx(mut_entry.fun))->at_if(mut_idx)};
                 // See if its one that's been set already
                 // NOLINTNEXTLINE(bsl-boolean-operators-forbidden)
-                if (pmut_entry && (pmut_entry->flags == hypercall::mv_cpuid_flag_t::mv_cpuid_set)) {
+                if ((cst_entry != nullptr) && (cst_entry->flags == hypercall::mv_cpuid_flag_t::mv_cpuid_set)) {
                     // bsl::debug() << "Got emulated CPUID FN" << bsl::hex(mut_entry.fun) << " " << bsl::hex(mut_entry.idx) << bsl::endl;
-                    mut_entry.eax = pmut_entry->eax;
-                    mut_entry.ebx = pmut_entry->ebx;
-                    mut_entry.ecx = pmut_entry->ecx;
-                    mut_entry.edx = pmut_entry->edx;
+                    mut_entry.eax = cst_entry->eax;
+                    mut_entry.ebx = cst_entry->ebx;
+                    mut_entry.ecx = cst_entry->ecx;
+                    mut_entry.edx = cst_entry->edx;
                     // print_leaf(bsl::error(), mut_entry);
                     return bsl::errc_success;
                 }
                 bsl::touch();
             }
-            else if ((((unsigned long)mut_entry.fun - CPUID_FN8000_0000.get()) < CPUID_NUM_EXT_FUNCTIONS.get())) {
-                auto const *const pmut_entry{
+            else if ((((unsigned long)mut_entry.fun - (unsigned long)CPUID_FN8000_0000.get()) < CPUID_NUM_EXT_FUNCTIONS.get())) {
+                auto const *const cst_entry{
                     m_ext_leaves.at_if(bsl::to_idx(mut_entry.fun - CPUID_FN8000_0000.get()))
                         ->at_if(mut_idx)};
 
                 // See if its one that's been set already
                 // NOLINTNEXTLINE(bsl-boolean-operators-forbidden)
-                if (pmut_entry && (pmut_entry->flags == hypercall::mv_cpuid_flag_t::mv_cpuid_set)) {
+                if ((cst_entry != nullptr) && (cst_entry->flags == hypercall::mv_cpuid_flag_t::mv_cpuid_set)) {
                     // bsl::debug() << "Got emulated CPUID FN" << bsl::hex(mut_entry.fun) << " " << bsl::hex(mut_entry.idx) << bsl::endl;
-                    mut_entry.eax = pmut_entry->eax;
-                    mut_entry.ebx = pmut_entry->ebx;
-                    mut_entry.ecx = pmut_entry->ecx;
-                    mut_entry.edx = pmut_entry->edx;
+                    mut_entry.eax = cst_entry->eax;
+                    mut_entry.ebx = cst_entry->ebx;
+                    mut_entry.ecx = cst_entry->ecx;
+                    mut_entry.edx = cst_entry->edx;
                     // print_leaf(bsl::error(), mut_entry);
                     return bsl::errc_success;
                 }
+                bsl::touch();
             }
 
             // If we get here, its not an emulated one, so run the intrinsic
@@ -558,12 +560,22 @@ namespace microv
         {
             bsl::discard(sys);
 
-            bsl::debug() << "Setting CPUID FN" << bsl::hex(entry.fun) << " " << bsl::hex(entry.idx)
-                         << bsl::endl;
+            // bsl::debug() << "Setting CPUID FN" << bsl::hex(entry.fun) << " " << bsl::hex(entry.idx) << bsl::endl;
 
             if (entry.fun < CPUID_FN8000_0000.get()) {
                 auto *const pmut_entry{
                     m_std_leaves.at_if(bsl::to_idx(entry.fun))->at_if(bsl::to_idx(entry.idx))};
+
+                if (bsl::unlikely(nullptr == pmut_entry)) {
+                    bsl::error()
+                        << "Failed to set CPUID Fn"    // --
+                        << bsl::hex(entry.fun)         // --
+                        << " "                         // --
+                        << bsl::hex(entry.idx)         // --
+                        << bsl::endl                   // --
+                        << bsl::here();
+                    return bsl::errc_failure;
+                }
 
                 pmut_entry->eax = entry.eax;
                 pmut_entry->ebx = entry.ebx;
@@ -576,6 +588,18 @@ namespace microv
                 auto *const pmut_entry{
                     m_ext_leaves.at_if(bsl::to_idx(entry.fun - CPUID_FN8000_0000.get()))
                         ->at_if(bsl::to_idx(entry.idx))};
+
+                if (bsl::unlikely(nullptr == pmut_entry)) {
+                    bsl::error()
+                        << "Failed to set ext CPUID Fn"    // --
+                        << bsl::hex(entry.fun)             // --
+                        << " "                             // --
+                        << bsl::hex(entry.idx)             // --
+                        << " requested"                    // --
+                        << bsl::endl                       // --
+                        << bsl::here();
+                    return bsl::errc_failure;
+                }
 
                 pmut_entry->eax = entry.eax;
                 pmut_entry->ebx = entry.ebx;
@@ -648,7 +672,7 @@ namespace microv
             }
 
             return bsl::errc_success;
-        }
+        };
     };
 }
 
