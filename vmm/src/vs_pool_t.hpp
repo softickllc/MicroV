@@ -621,7 +621,7 @@ namespace microv
         ///   @brief Sets the value of the requested MSR
         ///
         /// <!-- inputs/outputs -->
-        ///   @param sys the bf_syscall_t to use
+        ///   @param mut_sys the bf_syscall_t to use
         ///   @param msr the MSR to set
         ///   @param val the value to set the MSR to
         ///   @param vsid the ID of the vs_t to set
@@ -630,12 +630,12 @@ namespace microv
         ///
         [[nodiscard]] constexpr auto
         msr_set(
-            syscall::bf_syscall_t const &sys,
+            syscall::bf_syscall_t &mut_sys,
             bsl::safe_u64 const &msr,
             bsl::safe_u64 const &val,
             bsl::safe_u16 const &vsid) const noexcept -> bsl::errc_type
         {
-            return this->get_vs(vsid)->msr_set(sys, msr, val);
+            return this->get_vs(vsid)->msr_set(mut_sys, msr, val);
         }
 
         /// <!-- description -->

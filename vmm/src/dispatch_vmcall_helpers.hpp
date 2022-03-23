@@ -1791,11 +1791,11 @@ namespace microv
 
         if (num_iomem > bsl::safe_u64::magic_0()) {
             using page_t = bsl::array<uint8_t, HYPERVISOR_PAGE_SIZE.get()>;
-            constexpr auto page_mask{0xFFFFFFFFFFFFF000_u64};
+            constexpr auto _page_mask{0xFFFFFFFFFFFFF000_u64};
 
-            constexpr auto exit_reason_io{0x7B_u64};
+            constexpr auto _exit_reason_io{0x7B_u64};
             auto const exitcode{mut_sys.bf_vs_op_read(vsid, syscall::bf_reg_t::bf_reg_t_exitcode)};
-            if (bsl::unlikely(exitcode != exit_reason_io)) {
+            if (bsl::unlikely(exitcode != _exit_reason_io)) {
                 bsl::error() << "num_iomem was set but exit reason is not an IO"    // --
                              << bsl::here();                                        // --
                 return bsl::errc_failure;
@@ -1803,17 +1803,17 @@ namespace microv
 
             auto const exitinfo1{
                 mut_sys.bf_vs_op_read(vsid, syscall::bf_reg_t::bf_reg_t_exitinfo1)};
-            constexpr auto strn_mask{0x00000004_u64};
-            constexpr auto strn_shft{2_u64};
-            if (bsl::unlikely(((exitinfo1 & strn_mask) >> strn_shft).is_zero())) {
+            constexpr auto _strn_mask{0x00000004_u64};
+            constexpr auto _strn_shft{2_u64};
+            if (bsl::unlikely(((exitinfo1 & _strn_mask) >> _strn_shft).is_zero())) {
                 bsl::error() << "num_iomem was set but exit reason is not a string IO"    // --
                              << bsl::here();                                              // --
                 return bsl::errc_failure;
             }
 
-            constexpr auto type_mask{0x00000001_u64};
-            constexpr auto type_shft{0_u64};
-            if (bsl::unlikely(((exitinfo1 & type_mask) >> type_shft).is_zero())) {
+            constexpr auto _type_mask{0x00000001_u64};
+            constexpr auto _type_shft{0_u64};
+            if (bsl::unlikely(((exitinfo1 & _type_mask) >> _type_shft).is_zero())) {
                 bsl::error() << "num_iomem was set but exit reason is not a string IO IN"    // --
                              << bsl::here();                                                 // --
                 return bsl::errc_failure;
@@ -1833,11 +1833,11 @@ namespace microv
 
             auto mut_consumed_bytes{0_u64};
             {
-                auto const page{mut_pp_pool.map<page_t>(mut_sys, spa0 & page_mask)};
+                auto const page{mut_pp_pool.map<page_t>(mut_sys, spa0 & _page_mask)};
 
                 auto const idx{spa0 & ~page_mask};
                 auto const size{num_iomem.min((HYPERVISOR_PAGE_SIZE - idx).checked())};
-                auto mut_data{page.span(idx, size)};
+                auto mut_data{page.to_span(idx, size)};
                 if (bsl::unlikely(mut_data.is_invalid())) {
                     bsl::error() << "data is invalid"    // --
                                  << bsl::endl            // --

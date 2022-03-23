@@ -33,6 +33,7 @@
 #include <bsl/is_pod.hpp>
 #include <bsl/safe_integral.hpp>
 #include <bsl/unlikely.hpp>
+#include <bsl/span.hpp>
 
 namespace microv
 {
@@ -89,7 +90,7 @@ namespace microv
         ///   @param pmut_spa the SPA associated with this map
         ///
         constexpr pp_unique_map_t(
-            const T *pudm_ptr,
+            T *const pudm_ptr,
             syscall::bf_syscall_t *const pmut_sys,
             bsl::safe_u64 *const pmut_spa) noexcept
             : m_ptr{pudm_ptr}
@@ -226,7 +227,7 @@ namespace microv
             bsl::expects(this->assigned_vmid() == m_sys->bf_tls_vmid());
             bsl::expects(offset.is_valid());
             bsl::expects(offset + sizeof(U) <= sizeof(T));
-            return *reinterpret_cast<U *>(&reinterpret_cast<bsl::uint8 *>(m_ptr)[offset.get()]);
+            return *reinterpret_cast<U *>(&reinterpret_cast<bsl::uint8 *>(m_ptr)[offset.get()]); //NOLINT[cppcoreguidelines-pro-type-reinterpret-cast,-warnings-as-errors]
         }
 
         /// <!-- description -->
@@ -240,7 +241,7 @@ namespace microv
         ///     count overflows, an invalid span is returned.
         ///
         [[nodiscard]] constexpr auto
-        span(index_type const &pos, size_type const &count) const noexcept -> bsl::span<bsl::uint8>
+        to_span(index_type const &pos, size_type const &count) const noexcept -> bsl::span<bsl::uint8>
         {
             bsl::expects(pos.is_valid());
             bsl::expects(count.is_valid_and_checked());
@@ -262,7 +263,8 @@ namespace microv
                 return {};
             }
 
-            auto *const pmut_buf{&reinterpret_cast<bsl::uint8 *>(m_ptr)[pos.get()]};
+            //auto *const pmut_buf{&reinterpret_cast<bsl::uint8 *>(m_ptr)[pos.get()]};
+            auto *const pmut_buf{&m_ptr[pos.get()]};
             return bsl::span<bsl::uint8>{pmut_buf, count};
         }
 

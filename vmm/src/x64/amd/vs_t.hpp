@@ -2122,7 +2122,7 @@ namespace microv
         msr_set(
             syscall::bf_syscall_t &mut_sys,
             bsl::safe_u64 const &msr,
-            bsl::safe_u64 const &val) noexcept -> bsl::errc_type
+            bsl::safe_u64 const &val) const noexcept -> bsl::errc_type
         {
             bsl::expects(allocated_status_t::allocated == m_allocated);
             bsl::expects(running_status_t::running != m_status);

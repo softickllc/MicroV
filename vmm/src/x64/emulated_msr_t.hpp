@@ -41,7 +41,7 @@ namespace microv
     /// <!-- description -->
     ///   @brief See mv_msr_entry_t for more details
     ///
-    struct mv_msr_entry_t final //NOLINT
+    struct mv_msr_entry_t final
     {
         /// @brief stores the MSR number
         uint64_t msr_num;
@@ -50,8 +50,6 @@ namespace microv
         /// @brief boolean to say if this value has been set yet
         bool is_set;
     };
-
-    /// @brief stores the MAX_EMULATED_MSRS
     constexpr auto MAX_EMULATED_MSRS{200_idx};
 
     /// @class microv::emulated_msr_t
@@ -163,26 +161,26 @@ namespace microv
         {
             bsl::discard(sys);
             bsl::discard(msr);
-            constexpr auto msr_mtrrcap{0xfe_u32};
-            constexpr auto msr_patchlevel{0x8b_u32};
-            constexpr auto msr_smmtseg{0xC0010112_u32};
-            constexpr auto msr_syscfg{0xC0010010_u32};
-            constexpr auto msr_idfk{0xC0011029_u32};
-            constexpr auto msr_perf_ctl0{0xC0010000_u32};
-            constexpr auto msr_perf_ctl1{0xC0010001_u32};
-            constexpr auto msr_perf_ctl2{0xC0010002_u32};
-            constexpr auto msr_perf_ctl3{0xC0010003_u32};
-            constexpr auto msr_perf_ctr0{0xC0010004_u32};
-            constexpr auto msr_perf_ctr1{0xC0010005_u32};
-            constexpr auto msr_perf_ctr2{0xC0010006_u32};
-            constexpr auto msr_perf_ctr3{0xC0010007_u32};
-            constexpr auto msr_tsc{0x10_u32};
-            constexpr auto msr_machinecheck{0x017b_u32};
+            constexpr auto MSR_MTRRCap{0xfe_u32};
+            constexpr auto MSR_PatchLevel{0x8b_u32};
+            constexpr auto MSR_SMMTseg{0xC0010112_u32};
+            constexpr auto MSR_SYSCFG{0xC0010010_u32};
+            constexpr auto MSR_IDFK{0xC0011029_u32};
+            constexpr auto MSR_PERF_CTL0{0xC0010000_u32};
+            constexpr auto MSR_PERF_CTL1{0xC0010001_u32};
+            constexpr auto MSR_PERF_CTL2{0xC0010002_u32};
+            constexpr auto MSR_PERF_CTL3{0xC0010003_u32};
+            constexpr auto MSR_PERF_CTR0{0xC0010004_u32};
+            constexpr auto MSR_PERF_CTR1{0xC0010005_u32};
+            constexpr auto MSR_PERF_CTR2{0xC0010006_u32};
+            constexpr auto MSR_PERF_CTR3{0xC0010007_u32};
+            constexpr auto MSR_TSC{0x10_u32};
+            constexpr auto MSR_MACHINECHECK{0x017b_u32};
 
             switch (bsl::to_u32_unsafe(msr).get()) {
-                case msr_patchlevel.get():
-                case msr_tsc.get():
-                case msr_mtrrcap.get(): {
+                case MSR_PatchLevel.get():
+                case MSR_TSC.get():
+                case MSR_MTRRCap.get(): {
                     return sys.bf_intrinsic_op_rdmsr(bsl::to_u32(msr));
                 }
 
@@ -191,16 +189,17 @@ namespace microv
                 }
             }
 
-           //constexpr auto mut_i{0_idx};
+            auto mut_i{0_idx};
 
             // See if we already have an entry for this MSR to update
-            for (bsl::safe_idx mut_i{}; mut_i < 200_idx; ++mut_i) {
-                auto const *const cst_entry{m_msrs.at_if(mut_i)};
-                // NOLINTNEXTLINE(bsl-boolean-operators-forbidden)
-                if ((cst_entry->is_set) && (cst_entry->msr_num == msr.get())) {
-                    return bsl::make_safe(cst_entry->value);
+            for (mut_i = 0_idx; mut_i < MAX_EMULATED_MSRS.get(); ++mut_i) {
+                auto *const pmut_entry{m_msrs.at_if(mut_i)};
+
+                if ((pmut_entry->is_set) && (pmut_entry->msr_num == msr.get())) {
+                    // bsl::debug() << "Found existing index " << bsl::endl;
+                    // bsl::debug() << "EMULATED READ MSR " << bsl::hex(msr) << " val=" << bsl::hex(pmut_entry->value) << bsl::endl;
+                    return bsl::make_safe(pmut_entry->value);
                 }
-                bsl::touch();
             }
 
             bsl::debug() << "WARNING: UNHANDLED READ, RETURNING 0: MSR " << bsl::hex(msr)
@@ -208,6 +207,7 @@ namespace microv
             constexpr auto zero_val{0x0_u64};
             return zero_val;
 
+            // return bsl::safe_u64::failure();
         }
 
         /// <!-- description -->
@@ -229,35 +229,37 @@ namespace microv
             bsl::discard(msr);
             bsl::discard(val);
 
-            //auto mut_i{0_idx};
+            auto mut_i{0_idx};
 
             // bsl::debug() << "EMULATED WRITE MSR " << bsl::hex(msr) << " val=" << bsl::hex(val) << bsl::endl;
 
             // See if we already have an entry for this MSR to update
-            for (bsl::safe_idx mut_i{}; mut_i < 200_idx; ++mut_i) {
+            for (mut_i = 0_idx; mut_i < MAX_EMULATED_MSRS.get(); ++mut_i) {
                 auto *const pmut_entry{m_msrs.at_if(mut_i)};
-                // NOLINTNEXTLINE(bsl-boolean-operators-forbidden)
+
                 if ((pmut_entry->is_set) && (pmut_entry->msr_num == msr.get())) {
+                    // bsl::debug() << "Found existing index " << bsl::endl;
                     pmut_entry->value = val.get();
                     return bsl::errc_success;
                 }
-                bsl::touch();
             }
 
             // Look for a free entry to use
-            for (bsl::safe_idx mut_i{}; mut_i < 200_idx; ++mut_i) {
+            for (mut_i = 0_idx; mut_i < MAX_EMULATED_MSRS.get(); ++mut_i) {
                 auto *const pmut_entry{m_msrs.at_if(mut_i)};
-
                 // If this entry is already taken, continue
                 if (!pmut_entry->is_set) {
+                    // bsl::debug() << "Found free index " << bsl::endl;
                     pmut_entry->msr_num = msr.get();
                     pmut_entry->value = val.get();
                     pmut_entry->is_set = true;
                     return bsl::errc_success;
                 }
-                bsl::touch();
             }
 
+            // UT OH!! Out of entries
+            bsl::debug() << __FILE__ << " " << __FUNCTION__
+                         << " OH NO, OUT OF MSR ENTRIES!!! BAD BAD UNHANDLED" << bsl::endl;
             return bsl::errc_failure;
         }
     };

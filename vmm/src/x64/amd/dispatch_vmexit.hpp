@@ -190,9 +190,9 @@ namespace microv
         //  Only get here if the exit came  from a guest VM, not the root
         //
 
-        bsl::safe_u64 rflags{mut_sys.bf_vs_op_read(vsid, syscall::bf_reg_t::bf_reg_t_rflags)};
-        bsl::safe_u64 cr8{mut_sys.bf_vs_op_read(vsid, syscall::bf_reg_t::bf_reg_t_cr8)};
-        bsl::safe_u64 apic_base{
+        bsl::safe_u64 const rflags{mut_sys.bf_vs_op_read(vsid, syscall::bf_reg_t::bf_reg_t_rflags)};
+        bsl::safe_u64 const cr8{mut_sys.bf_vs_op_read(vsid, syscall::bf_reg_t::bf_reg_t_cr8)};
+        bsl::safe_u64 const apic_base{
             mut_vs_pool.msr_get(mut_sys, bsl::to_u64(MSR_APIC_BASE.get()), vsid)};
 
         switch (exit_reason.get()) {
