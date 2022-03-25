@@ -287,9 +287,9 @@ namespace microv
                     << "shared page for pp "                                      // --
                     << bsl::cyn << bsl::hex(this->assigned_ppid()) << bsl::rst    // --
                     << " was cleared"                                             // --
-                    << bsl::endl;                                                 // --
+                    << bsl::endl;                                              // --
             }
-            else {
+            else{
                 bsl::touch();
             }
         }

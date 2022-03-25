@@ -54,7 +54,7 @@ namespace microv
     ///   @param pp_pool the pp_pool_t to use
     ///   @param vm_pool the vm_pool_t to use
     ///   @param vp_pool the vp_pool_t to use
-    ///   @param vs_pool the vs_pool_t to use
+    ///   @param mut_vs_pool the vs_pool_t to use
     ///   @param vsid the ID of the VS that generated the VMExit
     ///   @return Returns bsl::errc_success on success, bsl::errc_failure
     ///     and friends otherwise
@@ -69,7 +69,7 @@ namespace microv
         pp_pool_t const &pp_pool,
         vm_pool_t const &vm_pool,
         vp_pool_t const &vp_pool,
-        vs_pool_t const &vs_pool,
+        vs_pool_t &mut_vs_pool,
         bsl::safe_u16 const &vsid) noexcept -> bsl::errc_type
     {
         bsl::discard(gs);
@@ -80,7 +80,7 @@ namespace microv
         bsl::discard(pp_pool);
         bsl::discard(vm_pool);
         bsl::discard(vp_pool);
-        bsl::discard(vs_pool);
+        bsl::discard(mut_vs_pool);
         bsl::discard(vsid);
 
         auto const rcx{mut_sys.bf_tls_rcx()};
@@ -93,7 +93,7 @@ namespace microv
         auto const msr_lo{(rax & mask32)};
         auto const msr_val{msr_hi | msr_lo};
 
-        auto const ret_val{vs_pool.msr_set(mut_sys, rcx, msr_val, vsid)};
+        auto const ret_val{mut_vs_pool.msr_set(mut_sys, rcx, msr_val, vsid)};
         // FIXME: should look at the return value
         bsl::discard(ret_val);
 

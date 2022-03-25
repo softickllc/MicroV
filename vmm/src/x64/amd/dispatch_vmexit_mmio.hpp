@@ -148,10 +148,10 @@ namespace microv
             case FD_REG_R13:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r13);
                 break;
-            case FD_REG_R14:
+            case FD_REG_R14.get():
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r14);
                 break;
-            case FD_REG_R15:
+            case FD_REG_R15.get():
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r15);
                 break;
 
@@ -162,6 +162,7 @@ namespace microv
             default:
                 bsl::error() << "Unsupported register operand! " << bsl::hex(reg_num) << bsl::endl;
                 return bsl::errc_failure;
+                break;
         }
 
         // Set return values
@@ -183,7 +184,7 @@ namespace microv
     ///   @param gs the gs_t to use
     ///   @param mut_tls the tls_t to use
     ///   @param mut_sys the bf_syscall_t to use
-    ///   @param page_pool the page_pool_t to use
+    ///   @param mut_page_pool the page_pool_t to use
     ///   @param intrinsic the intrinsic_t to use
     ///   @param mut_pp_pool the pp_pool_t to use
     ///   @param mut_vm_pool the vm_pool_t to use
@@ -210,6 +211,7 @@ namespace microv
 
         bsl::discard(gs);
         bsl::discard(vsid);
+        (void)mut_page_pool;
 
         // ---------------------------------------------------------------------
         // Context: Guest VM
@@ -223,15 +225,16 @@ namespace microv
 
         auto const op_bytes{
             mut_sys.bf_vs_op_read(vsid, syscall::bf_reg_t::bf_reg_t_number_of_bytes_fetched)};
-        bsl::uint64 opcodes0{
+        bsl::uint64 const opcodes0{
             mut_sys.bf_vs_op_read(vsid, syscall::bf_reg_t::bf_reg_t_guest_instruction_bytes0)
                 .get()};
-        bsl::uint64 opcodes1{
+        bsl::uint64 const opcodes1{
             mut_sys.bf_vs_op_read(vsid, syscall::bf_reg_t::bf_reg_t_guest_instruction_bytes1)
                 .get()};
         // bsl::uint64 opcodes0{};
         // bsl::uint64 opcodes1{};
-        auto rip{mut_sys.bf_vs_op_read(vsid, syscall::bf_reg_t::bf_reg_t_rip)};
+        auto const rip{mut_sys.bf_vs_op_read(vsid, syscall::bf_reg_t::bf_reg_t_rip)};
+        (void)op_bytes;
 
         /**************************/
         {
@@ -281,30 +284,31 @@ namespace microv
         // bsl::debug() << "          opcodes1 = " << bsl::hex(opcodes1) << bsl::endl;
 
         // Disassemble the triggering opcode
-        bsl::uint64 mut_instr_len{0};
-        bsl::uint64 memory_access_size{0};
+        bsl::uint64 mut_instr_len{(bsl::uint64)0};
+        bsl::uint64 mut_memory_access_size{(bsl::uint64)0};
         bsl::uint64 mut_register{bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rax)};
-        bsl::uint64 immediate_value{0};
-        bsl::uint64 cpu_mode{0};
+        bsl::uint64 mut_immediate_value{(bsl::uint64)0};
+        bsl::uint64 mut_cpu_mode{(bsl::uint64)0};
+        bsl::uint64 const lma_bit_mask{(bsl::uint64)0x400};
         auto const efer_val{mut_vs_pool.msr_get(mut_sys, bsl::to_u64(MSR_EFER.get()), vsid)};
 
         // Check LMA bit 10 to see if we're in 64 bit mode
-        if (efer_val.get() & 0x400) {
-            cpu_mode = DECODE_MODE__64.get();
+        if (0 != (int32_t)(efer_val.get() & lma_bit_mask)) {
+            mut_cpu_mode = DECODE_MODE__64.get();
         }
         else {
-            cpu_mode = DECODE_MODE__32.get();
+            mut_cpu_mode = DECODE_MODE__32.get();
         }
         //FIXME: We don't handle 16 bit mode here
 
-        auto decode_ret{instruction_decode(
+        auto const decode_ret{instruction_decode(
             opcodes0,
             opcodes1,
-            cpu_mode,
+            mut_cpu_mode,
             &mut_instr_len,
             &mut_register,
-            &memory_access_size,
-            &immediate_value)};
+            &mut_memory_access_size,
+            &mut_immediate_value)};
         if (bsl::unlikely(!decode_ret)) {
             bsl::print<bsl::V>() << bsl::here();
             switch_to_root(
@@ -314,14 +318,14 @@ namespace microv
             return vmexit_failure_advance_ip_and_run;
         }
 
-        bsl::uint64 nrip{rip.get() + mut_instr_len};
-        bsl::uint64 data{0};
+        bsl::uint64 const nrip{rip.get() + mut_instr_len};
+        bsl::uint64 mut_data{bsl::uint64(0)};
 
-        if (mut_register == OPCODE_REG_USE_IMMEDIATE.get()) {
-            data = immediate_value;
+        if (OPCODE_REG_USE_IMMEDIATE.get() == mut_register) {
+            mut_data = mut_immediate_value;
         }
         else {
-            data = mut_vs_pool.reg_get(mut_sys, bsl::make_safe(mut_register), vsid).get();
+            mut_data = mut_vs_pool.reg_get(mut_sys, bsl::make_safe(mut_register), vsid).get();
         }
 
         // bsl::debug() << "          mut_instr_len = " << bsl::hex(mut_instr_len) << bsl::endl;
@@ -341,7 +345,7 @@ namespace microv
         // ---------------------------------------------------------------------
 
         auto mut_run_return{mut_pp_pool.shared_page<hypercall::mv_run_return_t>(mut_sys)};
-        auto mut_exit_mmio{&mut_run_return->mv_exit_mmio};
+        auto mut_exit_mmio{&mut_run_return->mv_exit_mmio}; //NOLINT[cppcoreguidelines-pro-type-union-access,-warnings-as-errors]
 
         mut_exit_mmio->gpa = phys_addr.get();
         if (is_write.is_zero()) {
@@ -353,8 +357,8 @@ namespace microv
 
         mut_exit_mmio->nrip = nrip;
         mut_exit_mmio->target_reg = static_cast<bsl::uint64>(mut_register);
-        mut_exit_mmio->memory_access_size = memory_access_size;
-        mut_exit_mmio->data = data;
+        mut_exit_mmio->memory_access_size = mut_memory_access_size;
+        mut_exit_mmio->data = mut_data;
 
         set_reg_return(mut_sys, hypercall::MV_STATUS_SUCCESS);
         set_reg0(mut_sys, bsl::to_u64(hypercall::EXIT_REASON_MMIO));
