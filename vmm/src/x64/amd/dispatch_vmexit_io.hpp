@@ -242,7 +242,7 @@ namespace microv
         {
             auto const size{bytes_cur_page.min(mut_bytes)};
             auto const page{mut_pp_pool.map<page_t>(mut_sys, mut_spa & PAGE_MASK)};
-            auto const data{page.span(idx, size)};
+            auto const data{page.to_span(idx, size)};
             if (bsl::unlikely(data.is_invalid())) {
                 bsl::error() << "data is invalid"    // --
                              << bsl::endl            // --
@@ -274,7 +274,7 @@ namespace microv
             }
 
             auto const page{mut_pp_pool.map<page_t>(mut_sys, mut_spa)};
-            auto const data{page.span({}, size)};
+            auto const data{page.to_span({}, size)};
             bsl::expects((bytes_cur_page + data.size_bytes()).checked() == mut_bytes);
             // bsl::debug() << "bytes_cur_page " << bytes_cur_page << " size_bytes " << data.size_bytes() << " mut_bytes " << mut_bytes << " size " << size << bsl::endl;
             // return vmexit_failure_advance_ip_and_run;

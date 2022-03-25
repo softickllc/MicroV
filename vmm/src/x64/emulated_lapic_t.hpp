@@ -144,7 +144,7 @@ namespace microv
         ///   @param val the value to set MSR_APIC_BASE to
         ///
         constexpr void
-        set_apic_base(bsl::safe_u64 const &val) const noexcept
+        set_apic_base(bsl::safe_u64 const &val) noexcept
         {
             bsl::expects(val.is_valid_and_checked());
             m_apic_base = val;

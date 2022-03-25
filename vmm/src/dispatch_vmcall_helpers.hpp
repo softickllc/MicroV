@@ -1835,7 +1835,7 @@ namespace microv
             {
                 auto const page{mut_pp_pool.map<page_t>(mut_sys, spa0 & _page_mask)};
 
-                auto const idx{spa0 & ~page_mask};
+                auto const idx{spa0 & ~_page_mask};
                 auto const size{num_iomem.min((HYPERVISOR_PAGE_SIZE - idx).checked())};
                 auto mut_data{page.to_span(idx, size)};
                 if (bsl::unlikely(mut_data.is_invalid())) {
@@ -1865,7 +1865,7 @@ namespace microv
 
                 auto const idx{0_u64};
                 auto const size{(num_iomem - mut_consumed_bytes).checked()};
-                auto mut_data{page.span(idx, size)};
+                auto mut_data{page.to_span(idx, size)};
                 if (bsl::unlikely(mut_data.is_invalid())) {
                     bsl::error() << "data is invalid"    // --
                                  << bsl::endl            // --

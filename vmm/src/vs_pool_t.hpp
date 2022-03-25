@@ -633,7 +633,7 @@ namespace microv
             syscall::bf_syscall_t &mut_sys,
             bsl::safe_u64 const &msr,
             bsl::safe_u64 const &val,
-            bsl::safe_u16 const &vsid) const noexcept -> bsl::errc_type
+            bsl::safe_u16 const &vsid) noexcept -> bsl::errc_type
         {
             return this->get_vs(vsid)->msr_set(mut_sys, msr, val);
         }

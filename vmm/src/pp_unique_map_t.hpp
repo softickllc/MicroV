@@ -263,8 +263,8 @@ namespace microv
                 return {};
             }
 
-            //auto *const pmut_buf{&reinterpret_cast<bsl::uint8 *>(m_ptr)[pos.get()]};
-            auto *const pmut_buf{&m_ptr[pos.get()]};
+            auto *const pmut_buf{&reinterpret_cast<bsl::uint8 *>(m_ptr)[pos.get()]};
+
             return bsl::span<bsl::uint8>{pmut_buf, count};
         }
 

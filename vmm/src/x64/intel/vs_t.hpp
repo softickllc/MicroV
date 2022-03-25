@@ -2130,7 +2130,7 @@ namespace microv
         ///
         [[nodiscard]] constexpr auto
         msr_set(
-            syscall::bf_syscall_t const &mut_sys,
+            syscall::bf_syscall_t &mut_sys,
             bsl::safe_u64 const &msr,
             bsl::safe_u64 const &val) noexcept -> bsl::errc_type
         {
