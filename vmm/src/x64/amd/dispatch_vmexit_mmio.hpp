@@ -46,9 +46,15 @@
 
 namespace microv
 {
+    ///<!-- description -->
+    ///   @brief instruction_decode
+
+    /// @brief OPCODE_REG_USE_IMMEDIATE
     constexpr auto OPCODE_REG_USE_IMMEDIATE{0xBEEFBEEF_u64};
-    constexpr auto DECODE_MODE__32{0x1_u64};
-    constexpr auto DECODE_MODE__64{0x10_u64};
+    /// @brief DECODE_MODE_32
+    constexpr auto DECODE_MODE_32{0x1_u64};
+    /// @brief DECODE_MODE_64
+    constexpr auto DECODE_MODE_64{0x10_u64};
     [[nodiscard]] constexpr auto
     instruction_decode(
         bsl::uint64 const &opcodes0,
@@ -66,108 +72,108 @@ namespace microv
         FdInstr instr;
 
         int fadec_mode = 0;
-        if (cpu_mode == DECODE_MODE__32.get()) {
+        if ( DECODE_MODE_32.get() == cpu_mode) {
             fadec_mode = 32;
         }
-        else if (cpu_mode == DECODE_MODE__64.get()) {
+        else if (DECODE_MODE_64.get() == cpu_mode) {
             fadec_mode = 64;
         }
         else {
             bsl::debug() << "Unsupported decode mode!" << bsl::hex(cpu_mode) << bsl::endl;
         }
-        int ret = fd_decode(
-            reinterpret_cast<uint8_t *>(&myopcodes), sizeof(myopcodes), fadec_mode, 0, &instr);
-        uint64_t reg_num = -1;
+        // int mut_ret = fd_decode(
+        //     reinterpret_cast<uint8_t *>(&myopcodes), sizeof(myopcodes), fadec_mode, (uintptr_t)0, &instr); //NOLINT[cppcoreguidelines-pro-type-reinterpret-cast,-warnings-as-errors]
+        auto mut_reg_num = (uint64_t)-1;
 
         // Assume its a move instruction, and the register/immediate is either first or second operand
-        for (int i = 0; i < 2; i++) {
-            if (instr.operands[i].type == FD_OT_REG) {
-                reg_num = instr.operands[i].reg;
-                *memory_access_size = instr.operands[i].size;
-                if ((instr.operands[i].misc != FD_RT_IMP) &&
-                    (instr.operands[i].misc != FD_RT_GPL) &&
-                    (instr.operands[i].misc != FD_RT_GPL)) {
+        for (int mut_i = 0; mut_i < 2; mut_i++) {                         //NOLINT [cppcoreguidelines-pro-bounds-constant-array-index,-warnings-as-errors]
+            if (FD_OT_REG == (FdOpType)instr.operands[mut_i].type) {       //NOLINT [cppcoreguidelines-pro-bounds-constant-array-index,-warnings-as-errors]
+                mut_reg_num = instr.operands[mut_i].reg;                      //NOLINT [cppcoreguidelines-pro-bounds-constant-array-index,-warnings-as-errors]
+                *memory_access_size = instr.operands[mut_i].size;         //NOLINT [cppcoreguidelines-pro-bounds-constant-array-index,-warnings-as-errors]
+                if ((FD_RT_IMP != (int32_t)instr.operands[mut_i].misc) && //NOLINT [bsl-boolean-operators-forbidden,-warnings-as-errors]
+                    (FD_RT_GPL != (int32_t)instr.operands[mut_i].misc) && //NOLINT [bsl-boolean-operators-forbidden,-warnings-as-errors]
+                    (FD_RT_GPL != (int32_t)instr.operands[mut_i].misc)) { //NOLINT [cppcoreguidelines-pro-bounds-constant-array-index,-warnings-as-errors]
                     bsl::debug() << "UNHANDLED: RT_VEC register type not supported!!! "
-                                 << bsl::hex(instr.operands[i].misc) << bsl::endl;
+                                 << bsl::hex(instr.operands[mut_i].misc) << bsl::endl;//NOLINT[cppcoreguidelines-pro-bounds-constant-array-index,-warnings-as-errors]
                 }
             }
-            else if (instr.operands[i].type == FD_OT_IMM) {
-                reg_num = OPCODE_REG_USE_IMMEDIATE.get();
-                *immediate_value = instr.imm;
-                *memory_access_size = instr.operands[i].size;
+            else if (FD_OT_IMM == (int32_t)instr.operands[mut_i].type) { //NOLINT[cppcoreguidelines-pro-bounds-constant-array-index,-warnings-as-errors]
+                mut_reg_num = (uint64_t)OPCODE_REG_USE_IMMEDIATE.get();
+                *immediate_value = (bsl::uint64)instr.imm;
+                *memory_access_size = (bsl::uint64)instr.operands[mut_i].size; //NOLINT[cppcoreguidelines-pro-bounds-constant-array-index,-warnings-as-errors]
             }
         }
 
-        if (reg_num == -1) {
+        if (-1 == (int32_t)mut_reg_num) {
             bsl::error() << "Failed to find register or immediate operand!" << bsl::endl;
             bsl::debug() << "  opcodes0 = " << bsl::hex(opcodes0) << bsl::endl;
             return bsl::errc_failure;
         }
 
-        // Convernt reg_num to hypercall::mv_reg_t
-        switch (reg_num) {
-            case FD_REG_AX:
+        // Convernt mut_reg_num to hypercall::mv_reg_t
+        switch (mut_reg_num) {
+            case (uint64_t)FD_REG_AX:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rax);
                 break;
-            case FD_REG_BX:
+            case (uint64_t)FD_REG_BX:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rbx);
                 break;
-            case FD_REG_CX:
+            case (uint64_t)FD_REG_CX:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rcx);
                 break;
-            case FD_REG_DX:
+            case (uint64_t)FD_REG_DX:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rdx);
                 break;
-            case FD_REG_SI:
+            case (uint64_t)FD_REG_SI:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rsi);
                 break;
-            case FD_REG_DI:
+            case (uint64_t)FD_REG_DI:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rdi);
                 break;
-            case FD_REG_SP:
+            case (uint64_t)FD_REG_SP:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rsp);
                 break;
-            case FD_REG_BP:
+            case (uint64_t)FD_REG_BP:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_rbp);
                 break;
-            case FD_REG_R8:
+            case (uint64_t)FD_REG_R8:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r8);
                 break;
-            case FD_REG_R9:
+            case (uint64_t)FD_REG_R9:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r9);
                 break;
-            case FD_REG_R10:
+            case (uint64_t)FD_REG_R10:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r10);
                 break;
-            case FD_REG_R11:
+            case (uint64_t)FD_REG_R11:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r11);
                 break;
-            case FD_REG_R12:
+            case (uint64_t)FD_REG_R12:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r12);
                 break;
-            case FD_REG_R13:
+            case (uint64_t)FD_REG_R13:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r13);
                 break;
-            case FD_REG_R14.get():
+            case (uint64_t)FD_REG_R14:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r14);
                 break;
-            case FD_REG_R15.get():
+            case (uint64_t)FD_REG_R15:
                 *mut_register = bsl::uint64(hypercall::mv_reg_t::mv_reg_t_r15);
                 break;
 
-            case OPCODE_REG_USE_IMMEDIATE.get():
+            case  (uint64_t)OPCODE_REG_USE_IMMEDIATE.get():
                 *mut_register = OPCODE_REG_USE_IMMEDIATE.get();
                 break;
 
             default:
-                bsl::error() << "Unsupported register operand! " << bsl::hex(reg_num) << bsl::endl;
+                bsl::error() << "Unsupported register operand! " << bsl::hex(mut_reg_num) << bsl::endl;
                 return bsl::errc_failure;
                 break;
         }
 
         // Set return values
         *mut_instr_len = FD_SIZE(&instr);
-        *immediate_value = instr.imm;
+        *immediate_value = (bsl::uint64)instr.imm;
 
         // bsl::debug() << "*mut_instr_len = " << bsl::hex(*mut_instr_len) << bsl::endl;
         // bsl::debug() << "*mut_register = " << bsl::hex(*mut_register) << bsl::endl;
@@ -294,10 +300,10 @@ namespace microv
 
         // Check LMA bit 10 to see if we're in 64 bit mode
         if (0 != (int32_t)(efer_val.get() & lma_bit_mask)) {
-            mut_cpu_mode = DECODE_MODE__64.get();
+            mut_cpu_mode = DECODE_MODE_64.get();
         }
         else {
-            mut_cpu_mode = DECODE_MODE__32.get();
+            mut_cpu_mode = DECODE_MODE_32.get();
         }
         //FIXME: We don't handle 16 bit mode here
 
